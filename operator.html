@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stage Timer — Operator</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #111110; --surface: #1a1a18; --surface2: #222220;
+  --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+  --text: #f0ede6; --muted: #888782;
+  --green: #97C459; --green-dim: #3B6D11;
+  --yellow: #EF9F27; --yellow-dim: #633806;
+  --red: #E24B4A; --red-dim: #791F1F;
+  --accent: #185FA5;
+  --font: system-ui,-apple-system,sans-serif;
+  --mono: 'Courier New',monospace;
+}
+body { background:var(--bg); color:var(--text); font-family:var(--font); min-height:100vh; display:flex; flex-direction:column; }
+header { padding:14px 20px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); flex-wrap:wrap; gap:8px; }
+header h1 { font-size:13px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+.status-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.badge { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+.dot { width:7px; height:7px; border-radius:50%; background:var(--muted); }
+.dot.on { background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+main { flex:1; padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:760px; margin:0 auto; width:100%; }
+.card { background:var(--surface); border:0.5px solid var(--border); border-radius:10px; padding:16px 18px; }
+.card-title { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+
+.preview { grid-column:1/-1; text-align:center; padding:24px 20px; border-radius:10px; background:var(--surface); border:0.5px solid var(--border); transition:background 0.5s, border-color 0.5s; }
+.preview.state-green  { background:#17280a; border-color:#3B6D11; }
+.preview.state-yellow { background:#2a1d06; border-color:#633806; }
+.preview.state-red    { background:#280a0a; border-color:#791F1F; }
+#preview-time { font-family:var(--mono); font-size:60px; font-weight:700; letter-spacing:0.04em; line-height:1; color:var(--text); transition:color 0.4s; }
+.state-green  #preview-time { color:var(--green); }
+.state-yellow #preview-time { color:var(--yellow); }
+.state-red    #preview-time { color:var(--red); }
+#preview-status { margin-top:6px; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+.state-green  #preview-status { color:var(--green-dim); }
+.state-yellow #preview-status { color:var(--yellow-dim); }
+.state-red    #preview-status { color:var(--red-dim); }
+#preview-msg { margin-top:5px; font-size:13px; color:var(--muted); font-style:italic; min-height:18px; }
+
+.time-grid { display:flex; gap:6px; align-items:center; margin-bottom:12px; }
+.time-grid span { color:var(--muted); font-size:22px; font-weight:300; }
+input[type=number] { background:var(--surface2); border:0.5px solid var(--border2); border-radius:6px; color:var(--text); font-size:20px; font-weight:500; font-family:var(--mono); text-align:center; padding:7px 4px; width:58px; -moz-appearance:textfield; outline:none; }
+input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+input[type=number]:focus { border-color:var(--accent); }
+
+.presets-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+.preset { background:var(--surface2); border:0.5px solid var(--border); border-radius:6px; color:var(--muted); font-size:12px; font-weight:500; padding:6px 4px; cursor:pointer; text-align:center; }
+.preset:hover { background:#2c2c29; color:var(--text); }
+
+.btn-group { display:flex; flex-direction:column; gap:8px; }
+.btn { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; border-radius:7px; font-size:14px; font-weight:500; cursor:pointer; border:0.5px solid var(--border2); background:var(--surface2); color:var(--text); transition:background 0.15s, transform 0.1s; width:100%; }
+.btn:hover { background:#2c2c29; }
+.btn:active { transform:scale(0.97); }
+.btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+.btn.start { background:#0a2210; border-color:var(--green-dim); color:var(--green); }
+.btn.start:hover:not(:disabled) { background:#122e15; }
+.btn.pause { background:#1e1a09; border-color:var(--yellow-dim); color:var(--yellow); }
+.btn.pause:hover:not(:disabled) { background:#27220c; }
+.btn.stop  { background:#200a0a; border-color:var(--red-dim); color:var(--red); }
+.btn.stop:hover { background:#2a0d0d; }
+
+.warn-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.warn-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.warn-dot.y { background:var(--yellow); }
+.warn-dot.r { background:var(--red); }
+.warn-row label { font-size:12px; color:var(--muted); flex:1; }
+.warn-row input[type=number] { width:58px; font-size:14px; padding:5px 4px; }
+
+.msg-row { display:flex; gap:7px; }
+.msg-row input[type=text] { flex:1; background:var(--surface2); border:0.5px solid var(--border2); border-radius:6px; color:var(--text); font-size:13px; padding:8px 10px; outline:none; }
+.msg-row input[type=text]:focus { border-color:var(--accent); }
+.msg-row input[type=text]::placeholder { color:var(--muted); }
+.msg-row button { background:var(--surface2); border:0.5px solid var(--border2); border-radius:6px; color:var(--muted); font-size:12px; padding:8px 12px; cursor:pointer; white-space:nowrap; }
+.msg-row button:hover { color:var(--text); }
+
+.room-section { padding:14px 20px; background:var(--surface); border-top:0.5px solid var(--border); max-width:760px; margin:0 auto; width:100%; }
+.room-section label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px; }
+.room-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.room-row input[type=text] { flex:1; min-width:160px; background:var(--surface2); border:0.5px solid var(--border2); border-radius:6px; color:var(--text); font-size:14px; padding:8px 12px; outline:none; font-family:var(--mono); }
+.room-row input[type=text]:focus { border-color:var(--accent); }
+.room-row button { background:var(--accent); border:none; border-radius:6px; color:#fff; font-size:13px; font-weight:500; padding:9px 16px; cursor:pointer; white-space:nowrap; }
+.room-row button:hover { background:#0C447C; }
+
+.qr-section { padding:14px 20px; background:var(--surface); border-top:0.5px solid var(--border); max-width:760px; margin:0 auto; width:100%; display:none; }
+.qr-section.show { display:block; }
+.qr-section label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:10px; }
+.qr-inner { display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+.qr-box { background:#fff; border-radius:8px; padding:10px; display:inline-block; }
+.qr-box img { display:block; width:120px; height:120px; }
+.qr-info { flex:1; min-width:200px; }
+.qr-url { font-family:var(--mono); font-size:12px; color:var(--text); word-break:break-all; background:var(--surface2); padding:8px 10px; border-radius:6px; margin-bottom:8px; }
+.qr-tip { font-size:12px; color:var(--muted); line-height:1.6; }
+
+footer { padding:12px 20px; text-align:center; font-size:11px; color:var(--muted); border-top:0.5px solid var(--border); letter-spacing:0.06em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Stage Timer — Operator</h1>
+  <div class="status-row">
+    <div class="badge"><div class="dot" id="server-dot"></div><span id="server-label">Connecting…</span></div>
+    <div class="badge"><div class="dot" id="viewer-dot"></div><span id="viewer-label">0 displays</span></div>
+  </div>
+</header>
+
+<div class="room-section">
+  <label>Room code — share this with your display screen</label>
+  <div class="room-row">
+    <input type="text" id="room-input" placeholder="e.g. show-night-1" maxlength="40">
+    <button onclick="joinRoom()">Join / Create room</button>
+  </div>
+</div>
+
+<div class="qr-section" id="qr-section">
+  <label>Scan on your phone to open the display screen</label>
+  <div class="qr-inner">
+    <div class="qr-box"><img id="qr-img" src="" alt="QR code for display screen"></div>
+    <div class="qr-info">
+      <div class="qr-url" id="qr-url"></div>
+      <div class="qr-tip">Phone must be on the same Wi-Fi network, or you can host these files online for remote access.</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="preview" id="preview">
+    <div class="card-title">Display preview</div>
+    <div id="preview-time">00:00</div>
+    <div id="preview-status">Ready</div>
+    <div id="preview-msg"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Set time</div>
+    <div class="time-grid">
+      <input type="number" id="inp-h" min="0" max="23" value="0" placeholder="HH">
+      <span>:</span>
+      <input type="number" id="inp-m" min="0" max="59" value="5" placeholder="MM">
+      <span>:</span>
+      <input type="number" id="inp-s" min="0" max="59" value="0" placeholder="SS">
+    </div>
+    <div class="presets-grid">
+      <button class="preset" onclick="setPreset(0,30,0)">30 min</button>
+      <button class="preset" onclick="setPreset(0,20,0)">20 min</button>
+      <button class="preset" onclick="setPreset(0,15,0)">15 min</button>
+      <button class="preset" onclick="setPreset(0,10,0)">10 min</button>
+      <button class="preset" onclick="setPreset(0,5,0)">5 min</button>
+      <button class="preset" onclick="setPreset(0,3,0)">3 min</button>
+      <button class="preset" onclick="setPreset(0,2,0)">2 min</button>
+      <button class="preset" onclick="setPreset(0,1,0)">1 min</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Controls</div>
+    <div class="btn-group">
+      <button class="btn start" id="btn-start" onclick="startTimer()">▶ Start</button>
+      <button class="btn pause" id="btn-pause" onclick="pauseTimer()" disabled>⏸ Pause</button>
+      <button class="btn stop" onclick="resetTimer()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Warning thresholds</div>
+    <div class="warn-row">
+      <div class="warn-dot y"></div>
+      <label>Yellow at (seconds left)</label>
+      <input type="number" id="warn-yellow" value="120" min="1">
+    </div>
+    <div class="warn-row">
+      <div class="warn-dot r"></div>
+      <label>Red at (seconds left)</label>
+      <input type="number" id="warn-red" value="30" min="1">
+    </div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <div class="card-title">Message to display</div>
+    <div class="msg-row">
+      <input type="text" id="msg-input" placeholder="e.g. INTERMISSION · PLEASE BE SEATED · STAND BY" maxlength="60">
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="clearMessage()">Clear</button>
+    </div>
+  </div>
+</main>
+
+<footer>Powered by PieSocket — free real-time channel. Works across Wi-Fi and internet.</footer>
+
+<script>
+const PIESOCKET_API_KEY = 'oCX7pBIgQz6T3MhJgBlh9kE2Qi31wS0Txjg5Glii';
+const PIESOCKET_CLUSTER = 'demo.piesocket.com/v3';
+
+let socket = null;
+let roomCode = '';
+let viewerCount = 0;
+let totalSecs = 5 * 60;
+let remaining = totalSecs;
+let interval = null;
+let running = false;
+let currentMsg = '';
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmt(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h > 0 ? pad(h)+':'+pad(m)+':'+pad(sec) : pad(m)+':'+pad(sec);
+}
+function getWarnings() {
+  return { yellow: parseInt(document.getElementById('warn-yellow').value)||120, red: parseInt(document.getElementById('warn-red').value)||30 };
+}
+function getState() {
+  if (remaining <= 0) return 'done';
+  const w = getWarnings();
+  if (remaining <= w.red) return 'red';
+  if (remaining <= w.yellow) return 'yellow';
+  return 'green';
+}
+function getStatusText() {
+  if (remaining <= 0) return "TIME'S UP";
+  if (!running && remaining === totalSecs) return 'READY';
+  if (!running) return 'PAUSED';
+  const st = getState();
+  if (st === 'red') return 'FINAL WARNING';
+  if (st === 'yellow') return 'WARNING';
+  return 'RUNNING';
+}
+
+function broadcast() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({
+    event: 'timer-state',
+    remaining, totalSecs, running,
+    state: getState(),
+    status: getStatusText(),
+    message: currentMsg,
+    fmt: remaining > 0 ? fmt(remaining) : '00:00'
+  }));
+}
+
+function updatePreview() {
+  const st = getState();
+  const preview = document.getElementById('preview');
+  preview.className = 'preview state-' + (remaining <= 0 ? 'red' : st);
+  document.getElementById('preview-time').textContent = remaining > 0 ? fmt(remaining) : '00:00';
+  document.getElementById('preview-status').textContent = getStatusText();
+  document.getElementById('preview-msg').textContent = currentMsg;
+  broadcast();
+}
+
+function startTimer() {
+  if (running || remaining <= 0) return;
+  running = true;
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-pause').disabled = false;
+  interval = setInterval(() => {
+    remaining--;
+    updatePreview();
+    if (remaining <= 0) {
+      clearInterval(interval); running = false;
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-pause').disabled = true;
+    }
+  }, 1000);
+  updatePreview();
+}
+
+function pauseTimer() {
+  if (!running) return;
+  clearInterval(interval); running = false;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+  updatePreview();
+}
+
+function resetTimer() {
+  clearInterval(interval); running = false;
+  const h = parseInt(document.getElementById('inp-h').value)||0;
+  const m = parseInt(document.getElementById('inp-m').value)||0;
+  const s = parseInt(document.getElementById('inp-s').value)||0;
+  totalSecs = h*3600 + m*60 + s;
+  remaining = totalSecs;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+  updatePreview();
+}
+
+function setPreset(h,m,s) {
+  document.getElementById('inp-h').value = h;
+  document.getElementById('inp-m').value = m;
+  document.getElementById('inp-s').value = s;
+  resetTimer();
+}
+
+function sendMessage() {
+  currentMsg = document.getElementById('msg-input').value.trim();
+  updatePreview();
+}
+function clearMessage() {
+  currentMsg = '';
+  document.getElementById('msg-input').value = '';
+  updatePreview();
+}
+
+['inp-h','inp-m','inp-s'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { if (!running) resetTimer(); });
+});
+
+function joinRoom() {
+  const input = document.getElementById('room-input').value.trim().replace(/\s+/g,'-').toLowerCase();
+  if (!input) { alert('Please enter a room code'); return; }
+  roomCode = 'stagetimer-' + input;
+  if (socket) socket.close();
+  connectWS();
+}
+
+function connectWS() {
+  const url = `wss://${PIESOCKET_CLUSTER}/${roomCode}?api_key=${PIESOCKET_API_KEY}&notify_self=1`;
+  socket = new WebSocket(url);
+
+  socket.onopen = () => {
+    document.getElementById('server-dot').classList.add('on');
+    document.getElementById('server-label').textContent = 'Connected · room: ' + document.getElementById('room-input').value.trim();
+    showQR();
+    broadcast();
+  };
+
+  socket.onclose = () => {
+    document.getElementById('server-dot').classList.remove('on');
+    document.getElementById('server-label').textContent = 'Disconnected — retrying…';
+    setTimeout(connectWS, 3000);
+  };
+
+  socket.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.event === 'display-ping') {
+        viewerCount = Math.max(viewerCount, 1);
+        document.getElementById('viewer-dot').classList.add('on');
+        document.getElementById('viewer-label').textContent = viewerCount + ' display' + (viewerCount > 1 ? 's' : '') + ' connected';
+        broadcast();
+      }
+    } catch {}
+  };
+}
+
+function showQR() {
+  const displayURL = window.location.href.replace('operator.html','display.html') + '?room=' + encodeURIComponent(document.getElementById('room-input').value.trim());
+  document.getElementById('qr-url').textContent = displayURL;
+  document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(displayURL);
+  document.getElementById('qr-section').classList.add('show');
+}
+
+resetTimer();
+</script>
+</body>
+</html>

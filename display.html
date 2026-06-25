@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stage Timer — Display</title>
+<style>
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+:root { --font-timer:'Courier New','Lucida Console',monospace; --font-ui:system-ui,-apple-system,sans-serif; --t:0.6s; }
+html, body { width:100%; height:100%; overflow:hidden; }
+body { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#0c0c0b; transition:background var(--t); font-family:var(--font-ui); position:relative; }
+body.green  { background:#0d1f06; }
+body.yellow { background:#1e1305; }
+body.red    { background:#1a0505; }
+body.done   { background:#1a0505; }
+
+.bar { position:absolute; left:0; right:0; height:6px; display:flex; }
+.bar.top { top:0; } .bar.bot { bottom:0; }
+.bar-g { flex:1; background:#3B6D11; transition:background var(--t); }
+.bar-y { flex:1; background:#633806; transition:background var(--t); }
+.bar-r { flex:1; background:#791F1F; transition:background var(--t); }
+body.green  .bar-g { background:#97C459; }
+body.yellow .bar-y { background:#EF9F27; }
+body.red .bar-r, body.done .bar-r { background:#E24B4A; }
+
+#timer { font-family:var(--font-timer); font-size:clamp(72px,22vw,280px); font-weight:700; letter-spacing:0.04em; line-height:1; color:#555550; transition:color var(--t), text-shadow var(--t); text-align:center; padding:0 2vw; }
+body.green  #timer { color:#97C459; text-shadow:0 0 80px rgba(151,196,89,0.15); }
+body.yellow #timer { color:#EF9F27; text-shadow:0 0 80px rgba(239,159,39,0.15); }
+body.red    #timer { color:#E24B4A; text-shadow:0 0 80px rgba(226,75,74,0.2); }
+body.done   #timer { color:#E24B4A; }
+
+#status { margin-top:16px; font-size:clamp(14px,2.5vw,28px); font-weight:400; letter-spacing:0.22em; text-transform:uppercase; color:#3a3a36; transition:color var(--t); text-align:center; }
+body.green  #status { color:#3B6D11; }
+body.yellow #status { color:#633806; }
+body.red    #status, body.done #status { color:#791F1F; }
+
+#message { position:absolute; bottom:48px; font-size:clamp(16px,3vw,36px); font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:#555550; transition:color var(--t), opacity 0.4s; text-align:center; padding:0 5vw; opacity:0; }
+#message.visible { opacity:1; }
+body.green  #message { color:#639922; }
+body.yellow #message { color:#BA7517; }
+body.red    #message, body.done #message { color:#A32D2D; }
+
+#progress-wrap { position:absolute; top:18px; right:20px; width:44px; height:44px; opacity:0.5; }
+#progress-wrap svg { width:44px; height:44px; transform:rotate(-90deg); }
+#progress-circle { fill:none; stroke:#555550; stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke var(--t); r:19; cx:22; cy:22; stroke-dasharray:119.4; stroke-dashoffset:0; }
+body.green  #progress-circle { stroke:#97C459; }
+body.yellow #progress-circle { stroke:#EF9F27; }
+body.red    #progress-circle { stroke:#E24B4A; }
+
+#conn-badge { position:absolute; top:16px; left:20px; font-size:11px; color:#2a2a28; letter-spacing:0.1em; text-transform:uppercase; display:flex; align-items:center; gap:5px; }
+.conn-dot { width:6px; height:6px; border-radius:50%; background:#333; }
+.conn-dot.on { background:#97C459; }
+
+#fullscreen-hint { position:absolute; bottom:16px; right:20px; font-size:11px; color:#2a2a28; cursor:pointer; letter-spacing:0.06em; }
+#fullscreen-hint:hover { color:#555550; }
+
+/* Waiting screen */
+#waiting { display:flex; flex-direction:column; align-items:center; gap:24px; }
+#waiting.hide { display:none; }
+#waiting h2 { font-size:clamp(16px,4vw,36px); font-weight:400; color:#555550; letter-spacing:0.12em; text-transform:uppercase; }
+#room-setup { display:flex; flex-direction:column; align-items:center; gap:12px; }
+#room-setup input { background:#1a1a18; border:0.5px solid rgba(255,255,255,0.18); border-radius:8px; color:#f0ede6; font-size:18px; padding:10px 16px; text-align:center; outline:none; width:260px; font-family:'Courier New',monospace; }
+#room-setup input::placeholder { color:#555550; }
+#room-setup button { background:#185FA5; border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:500; padding:10px 24px; cursor:pointer; letter-spacing:0.06em; }
+#room-setup button:hover { background:#0C447C; }
+#room-error { color:#E24B4A; font-size:13px; letter-spacing:0.06em; }
+
+#main-display { display:none; flex-direction:column; align-items:center; justify-content:center; }
+#main-display.show { display:flex; }
+
+@keyframes timesup-blink { 0%,49%{opacity:1}50%,100%{opacity:0.2} }
+body.done #timer { animation:timesup-blink 1s infinite; }
+</style>
+</head>
+<body>
+
+<div class="bar top"><div class="bar-g"></div><div class="bar-y"></div><div class="bar-r"></div></div>
+
+<div id="conn-badge"><div class="conn-dot" id="conn-dot"></div><span id="conn-label">Connecting…</span></div>
+
+<div id="progress-wrap" aria-hidden="true">
+  <svg viewBox="0 0 44 44"><circle id="progress-circle" r="19" cx="22" cy="22"></circle></svg>
+</div>
+
+<div id="waiting">
+  <h2>Stage Timer</h2>
+  <div id="room-setup">
+    <input type="text" id="room-input" placeholder="Enter room code" maxlength="40">
+    <button onclick="joinRoom()">Connect to operator</button>
+    <div id="room-error"></div>
+  </div>
+</div>
+
+<div id="main-display">
+  <div id="timer" aria-live="polite">--:--</div>
+  <div id="status">Waiting for operator…</div>
+  <div id="message" aria-live="polite"></div>
+</div>
+
+<div class="bar bot"><div class="bar-g"></div><div class="bar-y"></div><div class="bar-r"></div></div>
+
+<div id="fullscreen-hint" onclick="toggleFullscreen()">⛶ fullscreen</div>
+
+<script>
+const PIESOCKET_API_KEY = 'oCX7pBIgQz6T3MhJgBlh9kE2Qi31wS0Txjg5Glii';
+const PIESOCKET_CLUSTER = 'demo.piesocket.com/v3';
+const CIRCUMFERENCE = 2 * Math.PI * 19;
+
+let socket = null;
+
+// Auto-join from URL param
+const params = new URLSearchParams(window.location.search);
+const roomParam = params.get('room');
+if (roomParam) {
+  document.getElementById('room-input').value = roomParam;
+  setTimeout(joinRoom, 300);
+}
+
+function joinRoom() {
+  const input = document.getElementById('room-input').value.trim().replace(/\s+/g,'-').toLowerCase();
+  if (!input) { document.getElementById('room-error').textContent = 'Enter a room code'; return; }
+  const roomCode = 'stagetimer-' + input;
+  if (socket) socket.close();
+  connectWS(roomCode);
+}
+
+function connectWS(roomCode) {
+  const url = `wss://${PIESOCKET_CLUSTER}/${roomCode}?api_key=${PIESOCKET_API_KEY}&notify_self=1`;
+  socket = new WebSocket(url);
+
+  socket.onopen = () => {
+    document.getElementById('conn-dot').classList.add('on');
+    document.getElementById('conn-label').textContent = 'Connected';
+    document.getElementById('waiting').classList.add('hide');
+    document.getElementById('main-display').classList.add('show');
+    pingInterval();
+  };
+
+  socket.onclose = () => {
+    document.getElementById('conn-dot').classList.remove('on');
+    document.getElementById('conn-label').textContent = 'Reconnecting…';
+    setTimeout(() => connectWS(roomCode), 3000);
+  };
+
+  socket.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.event === 'timer-state') applyState(data);
+    } catch {}
+  };
+}
+
+function pingInterval() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) return;
+  socket.send(JSON.stringify({ event: 'display-ping' }));
+  setTimeout(pingInterval, 2000);
+}
+
+function applyState(data) {
+  const { fmt, state, status, message, remaining, totalSecs } = data;
+
+  document.getElementById('timer').textContent = fmt || '--:--';
+  document.getElementById('status').textContent = status || '';
+
+  const msgEl = document.getElementById('message');
+  if (message) { msgEl.textContent = message; msgEl.classList.add('visible'); }
+  else { msgEl.classList.remove('visible'); }
+
+  document.body.className = remaining <= 0 ? 'done' : (state || '');
+
+  const pct = totalSecs > 0 ? remaining / totalSecs : 1;
+  const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, pct)));
+  document.getElementById('progress-circle').style.strokeDashoffset = offset;
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+  else document.exitFullscreen();
+}
+document.addEventListener('keydown', e => { if (e.key==='f'||e.key==='F') toggleFullscreen(); });
+document.getElementById('progress-circle').style.strokeDasharray = CIRCUMFERENCE;
+
+document.getElementById('room-input').addEventListener('keydown', e => { if (e.key==='Enter') joinRoom(); });
+</script>
+</body>
+</html>
