@@ -4,183 +4,277 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stage Timer — Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-:root { --font-timer:'Courier New','Lucida Console',monospace; --font-ui:system-ui,-apple-system,sans-serif; --t:0.6s; }
-html, body { width:100%; height:100%; overflow:hidden; }
-body { display:flex; flex-direction:column; align-items:center; justify-content:center; background:#0c0c0b; transition:background var(--t); font-family:var(--font-ui); position:relative; }
-body.green  { background:#0d1f06; }
-body.yellow { background:#1e1305; }
-body.red    { background:#1a0505; }
-body.done   { background:#1a0505; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.bar { position:absolute; left:0; right:0; height:6px; display:flex; }
-.bar.top { top:0; } .bar.bot { bottom:0; }
-.bar-g { flex:1; background:#3B6D11; transition:background var(--t); }
-.bar-y { flex:1; background:#633806; transition:background var(--t); }
-.bar-r { flex:1; background:#791F1F; transition:background var(--t); }
-body.green  .bar-g { background:#97C459; }
-body.yellow .bar-y { background:#EF9F27; }
-body.red .bar-r, body.done .bar-r { background:#E24B4A; }
+:root {
+  --font-timer: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", monospace;
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --transition: 0.7s cubic-bezier(.16,1,.3,1);
+}
 
-#timer { font-family:var(--font-timer); font-size:clamp(72px,22vw,280px); font-weight:700; letter-spacing:0.04em; line-height:1; color:#555550; transition:color var(--t), text-shadow var(--t); text-align:center; padding:0 2vw; }
-body.green  #timer { color:#97C459; text-shadow:0 0 80px rgba(151,196,89,0.15); }
-body.yellow #timer { color:#EF9F27; text-shadow:0 0 80px rgba(239,159,39,0.15); }
-body.red    #timer { color:#E24B4A; text-shadow:0 0 80px rgba(226,75,74,0.2); }
-body.done   #timer { color:#E24B4A; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
 
-#status { margin-top:16px; font-size:clamp(14px,2.5vw,28px); font-weight:400; letter-spacing:0.22em; text-transform:uppercase; color:#3a3a36; transition:color var(--t); text-align:center; }
-body.green  #status { color:#3B6D11; }
-body.yellow #status { color:#633806; }
-body.red    #status, body.done #status { color:#791F1F; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+}
 
-#message { position:absolute; bottom:48px; font-size:clamp(16px,3vw,36px); font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:#555550; transition:color var(--t), opacity 0.4s; text-align:center; padding:0 5vw; opacity:0; }
-#message.visible { opacity:1; }
-body.green  #message { color:#639922; }
-body.yellow #message { color:#BA7517; }
-body.red    #message, body.done #message { color:#A32D2D; }
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #050608;
+  transition: background var(--transition);
+  font-family: var(--font-ui);
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+}
 
-#progress-wrap { position:absolute; top:18px; right:20px; width:44px; height:44px; opacity:0.5; }
-#progress-wrap svg { width:44px; height:44px; transform:rotate(-90deg); }
-#progress-circle { fill:none; stroke:#555550; stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke var(--t); r:19; cx:22; cy:22; stroke-dasharray:119.4; stroke-dashoffset:0; }
-body.green  #progress-circle { stroke:#97C459; }
-body.yellow #progress-circle { stroke:#EF9F27; }
-body.red    #progress-circle { stroke:#E24B4A; }
+/* Ambient glow field — sits behind everything, colour-shifts with state */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 42% at 50% 46%, rgba(140,150,170,0.09), transparent 72%);
+  transition: background 0.9s var(--ease, cubic-bezier(.16,1,.3,1));
+  pointer-events: none;
+}
 
-#conn-badge { position:absolute; top:16px; left:20px; font-size:11px; color:#2a2a28; letter-spacing:0.1em; text-transform:uppercase; display:flex; align-items:center; gap:5px; }
-.conn-dot { width:6px; height:6px; border-radius:50%; background:#333; }
-.conn-dot.on { background:#97C459; }
+body.green::before  { background: radial-gradient(ellipse 55% 42% at 50% 46%, rgba(151,196,89,0.13), transparent 72%); }
+body.yellow::before { background: radial-gradient(ellipse 55% 42% at 50% 46%, rgba(239,159,39,0.14), transparent 72%); }
+body.red::before,
+body.done::before    { background: radial-gradient(ellipse 55% 42% at 50% 46%, rgba(226,75,74,0.16), transparent 72%); }
 
-#fullscreen-hint { position:absolute; bottom:16px; right:20px; font-size:11px; color:#2a2a28; cursor:pointer; letter-spacing:0.06em; }
-#fullscreen-hint:hover { color:#555550; }
+body.green  { background: #040703; }
+body.yellow { background: #080602; }
+body.red    { background: #090303; }
+body.done   { background: #090303; }
 
-/* Waiting screen */
-#waiting { display:flex; flex-direction:column; align-items:center; gap:24px; }
-#waiting.hide { display:none; }
-#waiting h2 { font-size:clamp(16px,4vw,36px); font-weight:400; color:#555550; letter-spacing:0.12em; text-transform:uppercase; }
-#room-setup { display:flex; flex-direction:column; align-items:center; gap:12px; }
-#room-setup input { background:#1a1a18; border:0.5px solid rgba(255,255,255,0.18); border-radius:8px; color:#f0ede6; font-size:18px; padding:10px 16px; text-align:center; outline:none; width:260px; font-family:'Courier New',monospace; }
-#room-setup input::placeholder { color:#555550; }
-#room-setup button { background:#185FA5; border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:500; padding:10px 24px; cursor:pointer; letter-spacing:0.06em; }
-#room-setup button:hover { background:#0C447C; }
-#room-error { color:#E24B4A; font-size:13px; letter-spacing:0.06em; }
+/* Single hairline accent — top and bottom, echoes the current state */
+.bar {
+  position: absolute; left: 0; right: 0;
+  height: 2px;
+  background: rgba(255,255,255,0.06);
+  transition: background var(--transition);
+  z-index: 2;
+}
+.bar.top { top: 0; }
+.bar.bot { bottom: 0; }
+.bar .bar-g, .bar .bar-y, .bar .bar-r { display: none; }
 
-#main-display { display:none; flex-direction:column; align-items:center; justify-content:center; }
-#main-display.show { display:flex; }
+body.green  .bar { background: rgba(151,196,89,0.55); }
+body.yellow .bar { background: rgba(239,159,39,0.6); }
+body.red    .bar, body.done .bar { background: rgba(226,75,74,0.65); }
 
-@keyframes timesup-blink { 0%,49%{opacity:1}50%,100%{opacity:0.2} }
-body.done #timer { animation:timesup-blink 1s infinite; }
+#timer {
+  font-family: var(--font-timer);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(92px, 23vw, 300px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #33363D;
+  transition: color var(--transition), text-shadow var(--transition);
+  text-align: center;
+  padding: 0 2vw;
+  position: relative;
+  z-index: 1;
+}
+
+body.green  #timer { color: #97C459; text-shadow: 0 0 100px rgba(151,196,89,0.22); }
+body.yellow #timer { color: #EF9F27; text-shadow: 0 0 100px rgba(239,159,39,0.25); }
+body.red    #timer { color: #E24B4A; text-shadow: 0 0 100px rgba(226,75,74,0.28); }
+body.done   #timer { color: #E24B4A; text-shadow: 0 0 120px rgba(226,75,74,0.36); }
+
+#status {
+  margin-top: 22px;
+  font-size: clamp(12px, 1.8vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #2A2C31;
+  transition: color var(--transition);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+body.green  #status { color: #6FA23C; }
+body.yellow #status { color: #C6821E; }
+body.red    #status, body.done #status { color: #C8504F; }
+
+#message {
+  position: absolute;
+  bottom: 58px;
+  font-size: clamp(15px, 2.4vw, 30px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4B4E56;
+  transition: color var(--transition), opacity 0.5s var(--transition);
+  text-align: center;
+  padding: 0 5vw;
+  opacity: 0;
+  z-index: 1;
+}
+#message.visible { opacity: 1; }
+body.green  #message { color: #8FBE63; }
+body.yellow #message { color: #E8A94A; }
+body.red    #message, body.done #message { color: #E2726F; }
+
+/* Progress ring */
+#progress-wrap {
+  position: absolute;
+  top: 26px; right: 30px;
+  width: 36px; height: 36px;
+  opacity: 0.5;
+  z-index: 2;
+}
+#progress-wrap svg { width: 36px; height: 36px; transform: rotate(-90deg); }
+#progress-circle {
+  fill: none;
+  stroke: #33363D;
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke var(--transition);
+  r: 19; cx: 18; cy: 18;
+  stroke-dasharray: 119.4;
+  stroke-dashoffset: 0;
+}
+body.green  #progress-circle { stroke: #97C459; }
+body.yellow #progress-circle { stroke: #EF9F27; }
+body.red    #progress-circle { stroke: #E24B4A; }
+
+/* Offline notice */
+#offline {
+  position: absolute;
+  top: 24px; left: 30px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #202226;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  transition: color 0.5s var(--transition);
+  z-index: 2;
+}
+#offline.active { color: #63666f; }
+
+/* Fullscreen hint */
+#fullscreen-hint {
+  position: absolute;
+  bottom: 22px; right: 30px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #1C1E22;
+  cursor: pointer;
+  letter-spacing: 0.07em;
+  transition: color 0.3s;
+  z-index: 2;
+}
+#fullscreen-hint:hover { color: #63666f; }
+
+/* Time's up — gentle, dignified pulse */
+@keyframes timesup-pulse {
+  0%,100% { opacity: 1; } 50% { opacity: 0.58; }
+}
+body.done #timer { animation: timesup-pulse 1.6s ease-in-out infinite; }
 </style>
 </head>
-<body>
+<body class="">
 
-<div class="bar top"><div class="bar-g"></div><div class="bar-y"></div><div class="bar-r"></div></div>
+<div class="bar top">
+  <div class="bar-g"></div>
+  <div class="bar-y"></div>
+  <div class="bar-r"></div>
+</div>
 
-<div id="conn-badge"><div class="conn-dot" id="conn-dot"></div><span id="conn-label">Connecting…</span></div>
+<div id="offline">Waiting for operator</div>
 
 <div id="progress-wrap" aria-hidden="true">
-  <svg viewBox="0 0 44 44"><circle id="progress-circle" r="19" cx="22" cy="22"></circle></svg>
+  <svg viewBox="0 0 36 36">
+    <circle id="progress-circle" r="19" cx="18" cy="18"></circle>
+  </svg>
 </div>
 
-<div id="waiting">
-  <h2>Stage Timer</h2>
-  <div id="room-setup">
-    <input type="text" id="room-input" placeholder="Enter room code" maxlength="40">
-    <button onclick="joinRoom()">Connect to operator</button>
-    <div id="room-error"></div>
-  </div>
+<div id="timer" aria-live="polite" aria-label="countdown timer">--:--</div>
+<div id="status">Waiting for operator</div>
+<div id="message" aria-live="polite"></div>
+
+<div class="bar bot">
+  <div class="bar-g"></div>
+  <div class="bar-y"></div>
+  <div class="bar-r"></div>
 </div>
 
-<div id="main-display">
-  <div id="timer" aria-live="polite">--:--</div>
-  <div id="status">Waiting for operator…</div>
-  <div id="message" aria-live="polite"></div>
-</div>
+<div id="fullscreen-hint" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶ fullscreen</div>
 
-<div class="bar bot"><div class="bar-g"></div><div class="bar-y"></div><div class="bar-r"></div></div>
+<script type="module">
 
-<div id="fullscreen-hint" onclick="toggleFullscreen()">⛶ fullscreen</div>
+import { db, doc, setDoc, onSnapshot } from "./firebase.js";
 
-<script>
-const PIESOCKET_API_KEY = 'oCX7pBIgQz6T3MhJgBlh9kE2Qi31wS0Txjg5Glii';
-const PIESOCKET_CLUSTER = 'demo.piesocket.com/v3';
+const timerRef = doc(db, "timer", "current");
+const presenceRef = doc(db, "timer", "presence");
 const CIRCUMFERENCE = 2 * Math.PI * 19;
 
-let socket = null;
+let offlineTimeout;
 
-// Auto-join from URL param
-const params = new URLSearchParams(window.location.search);
-const roomParam = params.get('room');
-if (roomParam) {
-  document.getElementById('room-input').value = roomParam;
-  setTimeout(joinRoom, 300);
-}
+onSnapshot(timerRef, (snap) => {
+  if (!snap.exists()) return;
+  const { fmt, state, status, message, remaining, totalSecs } = snap.data();
 
-function joinRoom() {
-  const input = document.getElementById('room-input').value.trim().replace(/\s+/g,'-').toLowerCase();
-  if (!input) { document.getElementById('room-error').textContent = 'Enter a room code'; return; }
-  const roomCode = 'stagetimer-' + input;
-  if (socket) socket.close();
-  connectWS(roomCode);
-}
+  document.getElementById('offline').classList.remove('active');
+  clearTimeout(offlineTimeout);
+  offlineTimeout = setTimeout(() => {
+    document.getElementById('offline').classList.add('active');
+    document.getElementById('status').textContent = 'Operator offline';
+  }, 5000);
 
-function connectWS(roomCode) {
-  const url = `wss://${PIESOCKET_CLUSTER}/${roomCode}?api_key=${PIESOCKET_API_KEY}&notify_self=1`;
-  socket = new WebSocket(url);
-
-  socket.onopen = () => {
-    document.getElementById('conn-dot').classList.add('on');
-    document.getElementById('conn-label').textContent = 'Connected';
-    document.getElementById('waiting').classList.add('hide');
-    document.getElementById('main-display').classList.add('show');
-    pingInterval();
-  };
-
-  socket.onclose = () => {
-    document.getElementById('conn-dot').classList.remove('on');
-    document.getElementById('conn-label').textContent = 'Reconnecting…';
-    setTimeout(() => connectWS(roomCode), 3000);
-  };
-
-  socket.onmessage = (e) => {
-    try {
-      const data = JSON.parse(e.data);
-      if (data.event === 'timer-state') applyState(data);
-    } catch {}
-  };
-}
-
-function pingInterval() {
-  if (!socket || socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({ event: 'display-ping' }));
-  setTimeout(pingInterval, 2000);
-}
-
-function applyState(data) {
-  const { fmt, state, status, message, remaining, totalSecs } = data;
-
-  document.getElementById('timer').textContent = fmt || '--:--';
-  document.getElementById('status').textContent = status || '';
+  document.getElementById('timer').textContent = fmt;
+  document.getElementById('status').textContent = status;
 
   const msgEl = document.getElementById('message');
-  if (message) { msgEl.textContent = message; msgEl.classList.add('visible'); }
-  else { msgEl.classList.remove('visible'); }
+  if (message) {
+    msgEl.textContent = message;
+    msgEl.classList.add('visible');
+  } else {
+    msgEl.classList.remove('visible');
+  }
 
-  document.body.className = remaining <= 0 ? 'done' : (state || '');
+  document.body.className = remaining <= 0 ? 'done' : state;
 
   const pct = totalSecs > 0 ? remaining / totalSecs : 1;
   const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, pct)));
   document.getElementById('progress-circle').style.strokeDashoffset = offset;
-}
+}, (err) => console.error('Timer listener error:', err));
+
+// Heartbeat so the operator page can show "display connected".
+setInterval(() => {
+  setDoc(presenceRef, { lastSeen: Date.now() }).catch((err) => {
+    console.error('Failed to send presence heartbeat:', err);
+  });
+}, 2000);
 
 function toggleFullscreen() {
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
-  else document.exitFullscreen();
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
 }
-document.addEventListener('keydown', e => { if (e.key==='f'||e.key==='F') toggleFullscreen(); });
-document.getElementById('progress-circle').style.strokeDasharray = CIRCUMFERENCE;
+window.toggleFullscreen = toggleFullscreen;
 
-document.getElementById('room-input').addEventListener('keydown', e => { if (e.key==='Enter') joinRoom(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+document.getElementById('progress-circle').style.strokeDasharray = CIRCUMFERENCE;
+document.getElementById('progress-circle').style.strokeDashoffset = 0;
 </script>
 </body>
 </html>
