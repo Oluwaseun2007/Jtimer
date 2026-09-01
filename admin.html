@@ -202,6 +202,28 @@ main {
   color: var(--text-muted);
 }
 
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  flex-wrap: wrap;
+}
+.account-row + .account-row { border-top: 1px solid var(--border); }
+.account-row .acc-user { font-size: 13.5px; font-weight: 650; min-width: 110px; }
+.account-row .acc-event { font-size: 12px; color: var(--text-muted); font-weight: 590; }
+.account-row .acc-pass {
+  font-family: monospace;
+  font-size: 12.5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  color: var(--text);
+}
+.account-row .acc-ip { font-family: monospace; font-size: 12px; color: var(--text-faint); }
+.account-row .acc-seen { font-size: 11.5px; color: var(--text-faint); font-weight: 590; margin-left: auto; }
+
 /* --- PIN gate --- */
 #pin-gate {
   position: fixed; inset: 0;
@@ -305,9 +327,16 @@ footer {
       <div class="empty-note">No events yet</div>
     </div>
   </div>
+
+  <div>
+    <div class="section-eyebrow" style="margin-bottom:10px;">OPERATOR ACCOUNTS</div>
+    <div class="group" id="accounts-list">
+      <div class="empty-note">No accounts yet</div>
+    </div>
+  </div>
 </main>
 
-<footer>A client counts as connected if it has sent a heartbeat in the last 8 seconds. Each event's operator/display data is isolated from every other event.</footer>
+<footer>A client counts as connected if it has sent a heartbeat in the last 8 seconds. Each event's operator/display data is isolated from every other event. Passwords and IPs here are plain text — this page is for you alone; don't share the admin code.</footer>
 
 <script type="module">
 
@@ -404,9 +433,40 @@ onSnapshot(collection(db, 'presence'), (snap) => {
   render();
 }, (err) => console.error('Presence collection listener error:', err));
 
+// --- Operator accounts ---
+// Full visibility into every operator's login, for the admin only —
+// operators and displays never see this collection's contents.
+let accounts = {}; // username -> { username, password, eventName, lastIp, lastLoginAt }
+
+function renderAccounts() {
+  const usernames = Object.keys(accounts).sort((a, b) => (accounts[b].lastLoginAt || 0) - (accounts[a].lastLoginAt || 0));
+  const list = document.getElementById('accounts-list');
+  if (usernames.length === 0) {
+    list.innerHTML = '<div class="empty-note">No accounts yet</div>';
+    return;
+  }
+  list.innerHTML = usernames.map(username => {
+    const a = accounts[username];
+    return `<div class="account-row">
+      <span class="acc-user">${a.username}</span>
+      <span class="acc-pass">${a.password || ''}</span>
+      <span class="acc-event">${a.eventName || ''}</span>
+      <span class="acc-ip">${a.lastIp || 'unknown IP'}</span>
+      <span class="acc-seen">${a.lastLoginAt ? 'login ' + timeAgo(a.lastLoginAt) : ''}</span>
+    </div>`;
+  }).join('');
+}
+
+onSnapshot(collection(db, 'operatorAccounts'), (snap) => {
+  const next = {};
+  snap.forEach((docSnap) => { next[docSnap.id] = docSnap.data(); });
+  accounts = next;
+  renderAccounts();
+}, (err) => console.error('Operator accounts listener error:', err));
+
 // Re-render every second so "active" status and timings stay current
 // even between Firestore updates.
-setInterval(render, 1000);
+setInterval(() => { render(); renderAccounts(); }, 1000);
 
 
 </script>

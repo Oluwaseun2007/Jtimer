@@ -6,159 +6,355 @@
 <title>Stage Timer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;590;650;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;590;650;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #F8FAFC;
-  --surface: #FFFFFF;
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-soft: #EAF1FF;
-  --text: #0F172A;
-  --text-muted: #6B7280;
-  --text-faint: #98A2B3;
-  --border: #E5E9F0;
-  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
-  --shadow-soft: 0 8px 24px rgba(15,23,42,.06);
-  --r-lg: 22px;
-  --r-md: 14px;
+  --ink: #050608;
+  --panel: #0D0F14;
+  --panel-2: #12151C;
+  --border: rgba(255,255,255,0.08);
+  --border-soft: rgba(255,255,255,0.05);
+  --text: #F4F6F9;
+  --text-muted: #9DA3B0;
+  --text-faint: #5B6172;
+  --accent: #97C459;
+  --accent-dim: #6F9B3D;
+  --accent-glow: rgba(151,196,89,0.18);
+  --blue: #5B8DEF;
+  --amber: #E8A94A;
+  --r-lg: 24px;
+  --r-md: 16px;
+  --r-sm: 11px;
+  --r-pill: 999px;
   --ease-out: cubic-bezier(.16,1,.3,1);
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
 }
 
 html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 
 body {
-  background: var(--bg);
+  background: var(--ink);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  font-family: var(--font-ui);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   letter-spacing: -0.006em;
-  padding: 24px;
+  overflow-x: hidden;
+  position: relative;
 }
 
-.brand {
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  background:
+    radial-gradient(600px 420px at 18% 8%, rgba(151,196,89,0.14), transparent 60%),
+    radial-gradient(560px 420px at 85% 15%, rgba(91,141,239,0.12), transparent 60%),
+    radial-gradient(700px 500px at 50% 100%, rgba(151,196,89,0.06), transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+
+nav {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 40px;
+  justify-content: space-between;
+  padding: 6px 4px 0;
+  margin-bottom: 54px;
 }
+.brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark {
-  width: 34px; height: 34px;
-  border-radius: 10px;
-  background: var(--primary);
-  color: #fff;
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #06210a;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(151,196,89,0.35), 0 6px 18px rgba(151,196,89,0.25);
 }
-.brand-mark svg { width: 18px; height: 18px; }
-.brand-title { font-size: 18px; font-weight: 650; letter-spacing: -0.015em; }
-
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  max-width: 380px;
+.brand-mark svg { width: 17px; height: 17px; }
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.nav-tag {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 6px 13px;
 }
 
-.card {
-  background: var(--surface);
+.hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 48px;
+  align-items: center;
+  margin-bottom: 88px;
+}
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 44px; }
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.eyebrow-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+h1 {
+  font-size: clamp(36px, 5.4vw, 56px);
+  font-weight: 800;
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+h1 .accent { color: var(--accent); }
+
+.hero-sub {
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 46ch;
+  margin-bottom: 30px;
+}
+
+.hero-stats { display: flex; gap: 28px; margin-bottom: 8px; }
+.hero-stat-num { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: var(--text); }
+.hero-stat-label { font-size: 11.5px; color: var(--text-faint); font-weight: 590; margin-top: 2px; }
+
+.mock {
+  position: relative;
+  background: radial-gradient(120% 130% at 50% 15%, #14181F 0%, #0A0C10 60%, #07080B 100%);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-xs);
-  padding: 20px 22px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  text-decoration: none;
+  padding: 30px 24px 26px;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+.mock::after {
+  content: "";
+  position: absolute;
+  top: -40%; left: -10%;
+  width: 70%; height: 90%;
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  pointer-events: none;
+}
+.mock-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg, var(--accent), transparent); margin-bottom: 22px; opacity: 0.85; }
+.mock-ring { width: 168px; height: 168px; margin: 0 auto 18px; position: relative; display: flex; align-items: center; justify-content: center; }
+.mock-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.mock-ring circle { fill: none; stroke-width: 4; }
+.mock-ring .track { stroke: rgba(255,255,255,0.07); }
+.mock-ring .prog { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 100.5; stroke-dashoffset: 28; filter: drop-shadow(0 0 10px var(--accent-glow)); }
+.mock-time { position: absolute; font-family: var(--font-mono); font-size: 34px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.mock-status { text-align: center; font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+.mock-msg { text-align: center; font-size: 11px; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); padding: 9px; border: 1px solid var(--border-soft); border-radius: var(--r-sm); background: rgba(255,255,255,0.02); }
+.mock-dots { display: flex; justify-content: center; gap: 6px; margin-top: 18px; }
+.mock-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.mock-dots span:nth-child(1) { background: var(--accent); }
+
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 84px; }
+@media (max-width: 760px) { .features { grid-template-columns: 1fr; } }
+.feature { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-md); padding: 22px 22px 20px; }
+.feature-icon { width: 34px; height: 34px; border-radius: 9px; background: rgba(151,196,89,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.feature-icon svg { width: 17px; height: 17px; }
+.feature-title { font-size: 14.5px; font-weight: 650; margin-bottom: 6px; letter-spacing: -0.008em; }
+.feature-body { font-size: 13px; line-height: 1.55; color: var(--text-muted); }
+
+.get-started {
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 40px 40px 36px;
+  position: relative;
+  overflow: hidden;
+}
+@media (max-width: 640px) { .get-started { padding: 30px 22px 28px; } }
+.get-started::before {
+  content: "";
+  position: absolute;
+  top: -60%; right: -20%;
+  width: 60%; height: 140%;
+  background: radial-gradient(circle, var(--accent-glow), transparent 65%);
+  pointer-events: none;
+}
+.gs-eyebrow { font-size: 12px; font-weight: 650; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.gs-title { font-size: 26px; font-weight: 750; letter-spacing: -0.02em; margin-bottom: 10px; }
+.gs-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; max-width: 52ch; }
+
+.gs-form { display: flex; gap: 12px; align-items: stretch; position: relative; z-index: 1; }
+@media (max-width: 560px) { .gs-form { flex-direction: column; } }
+
+.role-select-wrap { position: relative; flex: 1; }
+.role-select-wrap svg.chev { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-faint); pointer-events: none; }
+#role-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 15px 40px 15px 16px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 610;
   color: var(--text);
-  transition: box-shadow .18s var(--ease-out), border-color .18s var(--ease-out), transform .12s var(--ease-out);
+  cursor: pointer;
+  transition: border-color .16s var(--ease-out), background .16s var(--ease-out);
 }
-.card:hover { box-shadow: var(--shadow-soft); border-color: #C7DAFC; transform: translateY(-1px); }
-.card:active { transform: scale(0.99); }
+#role-select:hover, #role-select:focus { border-color: rgba(151,196,89,0.5); background: rgba(255,255,255,0.05); outline: none; }
+#role-select option { background: var(--panel); color: var(--text); }
 
-.card-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+#continue-btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 15px 26px;
+  background: var(--accent);
+  color: #06210a;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .16s var(--ease-out), transform .12s var(--ease-out);
 }
-.card-icon svg { width: 22px; height: 22px; }
+#continue-btn:hover { background: #A6D66C; }
+#continue-btn:active { transform: scale(0.98); }
+#continue-btn svg { width: 16px; height: 16px; }
 
-.card-text { flex: 1; }
-.card-title { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 2px; }
-.card-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; line-height: 1.4; }
+.gs-hint { margin-top: 16px; font-size: 12px; color: var(--text-faint); position: relative; z-index: 1; }
 
-.card-arrow { color: var(--text-faint); flex-shrink: 0; }
-.card-arrow svg { width: 16px; height: 16px; }
-
-footer {
-  margin-top: 36px;
-  font-size: 12px;
-  color: var(--text-faint);
-  text-align: center;
-}
+footer { margin-top: 60px; text-align: center; font-size: 12px; color: var(--text-faint); }
 </style>
 </head>
 <body>
 
-<div class="brand">
-  <div class="brand-mark">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="13" r="8"/><path d="M9 2h6"/></svg>
+<div class="wrap">
+
+  <nav>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="13" r="8"/><path d="M9 2h6"/></svg>
+      </div>
+      <div class="brand-name">Stage Timer</div>
+    </div>
+    <div class="nav-tag">Real-time · Any device</div>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow"><span class="eyebrow-dot"></span> Live countdown control</div>
+      <h1>Run the room<br>down to the <span class="accent">second.</span></h1>
+      <p class="hero-sub">A countdown display and remote control for services, conferences, and shows. Set the lineup, hand the stage a clean full-screen timer, and adjust it live from any device — synced instantly.</p>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">&lt;1s</div>
+          <div class="hero-stat-label">Sync latency</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">∞</div>
+          <div class="hero-stat-label">Events supported</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">2</div>
+          <div class="hero-stat-label">Devices needed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock" aria-hidden="true">
+      <div class="mock-bar"></div>
+      <div class="mock-ring">
+        <svg viewBox="0 0 36 36">
+          <circle class="track" cx="18" cy="18" r="16"></circle>
+          <circle class="prog" cx="18" cy="18" r="16"></circle>
+        </svg>
+        <div class="mock-time">04:12</div>
+      </div>
+      <div class="mock-status">Running</div>
+      <div class="mock-msg">Please wrap up in 2 minutes</div>
+      <div class="mock-dots"><span></span><span></span><span></span></div>
+    </div>
   </div>
-  <div class="brand-title">Stage Timer</div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8M12 18v2"/></svg>
+      </div>
+      <div class="feature-title">One screen, anywhere</div>
+      <div class="feature-body">Open the display on a TV, projector, or monitor — it reconnects and picks up right where the operator left off.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div class="feature-title">Build the lineup</div>
+      <div class="feature-body">Queue up speakers or segments ahead of time, then load each one's time and name onto the display with a single tap.</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      </div>
+      <div class="feature-title">Adjust on the fly</div>
+      <div class="feature-body">Add time, send a message, or blank the screen instantly if something goes off script — the display updates in real time.</div>
+    </div>
+  </div>
+
+  <div class="get-started">
+    <div class="gs-eyebrow">Get started</div>
+    <div class="gs-title">Choose how you're joining</div>
+    <div class="gs-sub">Running the show? Pick Operator and set up (or log into) your account. Just putting the timer on a screen? Pick Display and enter the code your operator gives you.</div>
+
+    <div class="gs-form">
+      <div class="role-select-wrap">
+        <select id="role-select">
+          <option value="operator.html">Operator — run the timer, lineup &amp; messages</option>
+          <option value="display.html">Display — show the countdown on this screen</option>
+        </select>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <button id="continue-btn">
+        Continue
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="gs-hint">Operators create a free account the first time they sign in — no setup needed beforehand.</div>
+  </div>
+
+  <footer>Each event's timer, lineup, and display code stay isolated from every other event.</footer>
+
 </div>
 
-<div class="cards">
-  <a class="card" href="operator.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-    </div>
-    <div class="card-text">
-      <div class="card-title">Operator</div>
-      <div class="card-sub">Run the countdown, messages, and media for an event</div>
-    </div>
-    <div class="card-arrow">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
-  </a>
-
-  <a class="card" href="display.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-    </div>
-    <div class="card-text">
-      <div class="card-title">Display</div>
-      <div class="card-sub">The countdown screen for the stage or venue</div>
-    </div>
-    <div class="card-arrow">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
-  </a>
-
-  <a class="card" href="admin.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
-    </div>
-    <div class="card-text">
-      <div class="card-title">Admin</div>
-      <div class="card-sub">See every event and who's connected right now</div>
-    </div>
-    <div class="card-arrow">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
-  </a>
-</div>
-
-<footer>Each page has its own access code.</footer>
+<script>
+document.getElementById('continue-btn').addEventListener('click', () => {
+  const dest = document.getElementById('role-select').value;
+  window.location.href = dest;
+});
+</script>
 
 </body>
 </html>

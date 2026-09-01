@@ -297,6 +297,63 @@ main {
 .preset:active { transform: scale(0.94); }
 .preset:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
+/* ---------- Program list ---------- */
+.program-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--border);
+}
+.program-row.active { background: var(--primary-soft); }
+.program-row .p-name { flex: 1; font-size: 13.5px; font-weight: 610; }
+.program-row .p-dur { font-family: monospace; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-muted); font-weight: 610; }
+.program-row .p-use {
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 650;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.program-row .p-use:hover { background: var(--primary-hover); }
+.program-row .p-del {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.program-row .p-del:hover { background: var(--danger-soft); color: var(--danger); }
+.program-empty { padding: 16px; font-size: 12.5px; color: var(--text-faint); text-align: center; }
+
+#btn-blank {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 610;
+  cursor: pointer;
+  transition: background .16s var(--ease-out), color .16s var(--ease-out), border-color .16s var(--ease-out);
+}
+#btn-blank:hover { background: var(--hover); }
+#btn-blank.active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
 .controls-bar {
   display: flex;
 }
@@ -609,6 +666,7 @@ footer {
     </div>
   </div>
   <div style="display:flex; align-items:center; gap:10px;">
+    <div id="wall-clock" title="Current time" style="font-size:12.5px;font-weight:650;color:var(--text-muted);font-variant-numeric:tabular-nums;">--:--:--</div>
     <div class="event-code-badge" id="event-code-badge" onclick="copyDisplayCode()" style="display:none;" title="Click to copy your display password">
       <span id="event-code-text"></span>
     </div>
@@ -629,6 +687,33 @@ footer {
       <div id="preview-time">00:00</div>
       <div id="preview-status">Ready</div>
       <div id="preview-msg"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Program</div>
+    <div class="group">
+      <div class="row" style="gap:8px;">
+        <input type="text" id="prog-name-input" placeholder="Speaker or segment name" maxlength="60" style="flex:1;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);">
+      </div>
+      <div class="duration-field" style="padding-top:0;">
+        <div class="seg">
+          <input type="number" id="prog-h" min="0" max="23" value="0" aria-label="Hours">
+          <span class="seg-label">Hours</span>
+        </div>
+        <div class="seg">
+          <input type="number" id="prog-m" min="0" max="59" value="5" aria-label="Minutes">
+          <span class="seg-label">Minutes</span>
+        </div>
+        <div class="seg">
+          <input type="number" id="prog-s" min="0" max="59" value="0" aria-label="Seconds">
+          <span class="seg-label">Seconds</span>
+        </div>
+      </div>
+      <div class="row" style="padding-top:0;">
+        <button class="btn adjust" style="width:100%;" onclick="addProgramItem()">+ Add to program</button>
+      </div>
+      <div id="program-list"></div>
     </div>
   </div>
 
@@ -677,6 +762,12 @@ footer {
         <button class="btn stop" onclick="resetTimer()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
           Reset
+        </button>
+      </div>
+      <div class="row" style="padding-top:14px;">
+        <button class="btn adjust" id="btn-blank" onclick="toggleBlank()" style="width:100%;">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.4 21.4 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.4 21.4 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+          Blank screen
         </button>
       </div>
     </div>
@@ -802,6 +893,27 @@ function generateDisplayCode() {
   return 'STG-' + Math.floor(1000 + Math.random() * 9000);
 }
 
+// Best-effort public IP lookup for the admin panel — a free, keyless
+// service, so this can silently fail (e.g. offline) without blocking
+// login.
+async function fetchClientIp() {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip || null;
+  } catch (err) {
+    console.error('Failed to fetch client IP:', err);
+    return null;
+  }
+}
+
+function updateWallClock() {
+  const el = document.getElementById('wall-clock');
+  if (el) el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+updateWallClock();
+setInterval(updateWallClock, 1000);
+
 async function createAccount() {
   welcomeError.textContent = '';
   const eventName = document.getElementById('signup-event-name').value.trim();
@@ -832,11 +944,13 @@ async function createAccount() {
       code = generateDisplayCode();
     }
 
+    const ip = await fetchClientIp();
     await setDoc(doc(db, 'events', eventId), {
       name: eventName, displayCode: code, createdAt: Date.now(), active: true
     });
     await setDoc(accountRef, {
-      username, password, eventId, eventName, displayCode: code, createdAt: Date.now()
+      username, password, eventId, eventName, displayCode: code, createdAt: Date.now(),
+      lastIp: ip, lastLoginAt: Date.now()
     });
 
     const session = { username, eventId, eventName, displayCode: code };
@@ -859,12 +973,17 @@ async function logIn() {
   const btn = document.getElementById('login-btn');
   btn.disabled = true;
   try {
-    const snap = await getDoc(doc(db, 'operatorAccounts', username));
+    const accountRef = doc(db, 'operatorAccounts', username);
+    const snap = await getDoc(accountRef);
     if (!snap.exists() || snap.data().password !== password) {
       welcomeError.textContent = 'Incorrect username or password';
       return;
     }
     const data = snap.data();
+    const ip = await fetchClientIp();
+    setDoc(accountRef, { lastIp: ip, lastLoginAt: Date.now() }, { merge: true }).catch((err) => {
+      console.error('Failed to record login IP:', err);
+    });
     const session = { username, eventId: data.eventId, eventName: data.eventName, displayCode: data.displayCode };
     localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(session));
     enterSession(session);
@@ -945,7 +1064,7 @@ function initEventBindings(eventId) {
     (err) => console.error('Presence listener error:', err)
   );
 
-  resetTimer();
+  loadProgram().then(() => resetTimer());
 }
 
 let totalSecs = 5 * 60;
@@ -956,6 +1075,11 @@ let currentMsg = '';
 let currentMediaUrl = '';
 let currentMediaType = 'image';
 let lastDisplaySeen = 0;
+let isBlank = false;
+let extraNote = '';
+let extraNoteAt = 0;
+let program = [];
+let activeProgramId = null;
 
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmt(s) {
@@ -1006,8 +1130,12 @@ async function broadcast() {
       warnRed: w.red,
       mediaUrl: currentMediaUrl,
       mediaType: currentMediaType,
+      blank: isBlank,
+      extraNote,
+      extraNoteAt,
+      program,
       updated: Date.now()
-    });
+    }, { merge: true });
   } catch (err) {
     console.error('Failed to sync timer state:', err);
   }
@@ -1079,8 +1207,102 @@ function adjustTime(delta) {
   if (remaining > 0 && !running) {
     document.getElementById('btn-start').disabled = false;
   }
+  // Let the display flash a note when extra time is granted, so the
+  // audience/speaker can see it was intentional rather than a glitch.
+  if (delta > 0) {
+    extraNote = `+${delta}s ADDED`;
+    extraNoteAt = Date.now();
+  }
   updatePreview();
 }
+
+function toggleBlank() {
+  isBlank = !isBlank;
+  const btn = document.getElementById('btn-blank');
+  btn.classList.toggle('active', isBlank);
+  btn.lastChild.textContent = isBlank ? ' Restore screen' : ' Blank screen';
+  updatePreview();
+}
+window.toggleBlank = toggleBlank;
+
+// --- Program / lineup ---
+// Stored as an array field on the event's Firestore doc (via broadcast)
+// so it survives operator refreshes and stays specific to this event.
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderProgram() {
+  const list = document.getElementById('program-list');
+  if (program.length === 0) {
+    list.innerHTML = '<div class="program-empty">No items yet — add your lineup above</div>';
+    return;
+  }
+  list.innerHTML = program.map((item) => {
+    const label = item.h > 0 ? `${pad(item.h)}:${pad(item.m)}:${pad(item.s)}` : `${pad(item.m)}:${pad(item.s)}`;
+    return `<div class="program-row${item.id === activeProgramId ? ' active' : ''}">
+      <span class="p-name">${escapeHtml(item.name)}</span>
+      <span class="p-dur">${label}</span>
+      <button class="p-use" onclick="useProgramItem('${item.id}')">Use</button>
+      <button class="p-del" onclick="removeProgramItem('${item.id}')" title="Remove" aria-label="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function loadProgram() {
+  try {
+    const snap = await getDoc(timerRef);
+    if (snap.exists() && Array.isArray(snap.data().program)) {
+      program = snap.data().program;
+    }
+  } catch (err) {
+    console.error('Failed to load saved program:', err);
+  }
+  renderProgram();
+}
+
+function addProgramItem() {
+  const nameEl = document.getElementById('prog-name-input');
+  const name = nameEl.value.trim();
+  const h = parseInt(document.getElementById('prog-h').value) || 0;
+  const m = parseInt(document.getElementById('prog-m').value) || 0;
+  const s = parseInt(document.getElementById('prog-s').value) || 0;
+  if (!name || (h === 0 && m === 0 && s === 0)) return;
+  program.push({ id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, h, m, s });
+  nameEl.value = '';
+  renderProgram();
+  broadcast();
+}
+window.addProgramItem = addProgramItem;
+
+function removeProgramItem(id) {
+  program = program.filter(p => p.id !== id);
+  if (activeProgramId === id) activeProgramId = null;
+  renderProgram();
+  broadcast();
+}
+window.removeProgramItem = removeProgramItem;
+
+// The core ask: one tap loads a speaker's allotted time AND announces
+// their name on the display, instead of setting duration + message
+// separately every time someone's turn comes up.
+function useProgramItem(id) {
+  const item = program.find(p => p.id === id);
+  if (!item) return;
+  activeProgramId = id;
+  document.getElementById('inp-h').value = item.h;
+  document.getElementById('inp-m').value = item.m;
+  document.getElementById('inp-s').value = item.s;
+  currentMsg = item.name;
+  document.getElementById('msg-input').value = item.name;
+  renderProgram();
+  resetTimer();
+}
+window.useProgramItem = useProgramItem;
 
 function sendMessage() {
   currentMsg = document.getElementById('msg-input').value.trim();

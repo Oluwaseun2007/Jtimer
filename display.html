@@ -126,6 +126,39 @@ body.green  #message { color: #8FBE63; }
 body.yellow #message { color: #E8A94A; }
 body.red    #message, body.done #message { color: #E2726F; }
 
+/* ---------- Extra time note ---------- */
+/* Transient banner that flashes when the operator grants extra time,
+   so it reads as intentional rather than the clock glitching. */
+#extra-note {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 9px 22px;
+  border-radius: 999px;
+  background: #97C459;
+  color: #050608;
+  font-family: var(--font-ui);
+  font-size: clamp(13px, 1.6vw, 18px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  z-index: 2;
+  transition: opacity 0.4s var(--transition), transform 0.4s var(--transition);
+  pointer-events: none;
+}
+#extra-note.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Blank screen ---------- */
+/* An operator safety valve for on-air mistakes — hides everything but
+   keeps the Firestore connection alive underneath, so un-blanking is
+   instant and doesn't need a reconnect. */
+body.blank #timer, body.blank #status, body.blank #message,
+body.blank #progress-wrap, body.blank #media-overlay,
+body.blank .bar, body.blank #extra-note { visibility: hidden; }
+body.blank { background: #000; }
+
 #progress-wrap {
   position: absolute;
   top: 26px; right: 30px;
@@ -289,6 +322,46 @@ body.media-mode #timer {
   font-size: clamp(44px, 8vw, 110px);
 }
 body.media-mode #progress-wrap { opacity: 0.85; }
+
+/* ---------- Tap-for-fullscreen prompt ---------- */
+/* Browsers block requestFullscreen() unless it's triggered by a real
+   click/tap, so this can't fire on its own after an auto-reconnect
+   (e.g. on page load/refresh). Show one clear button instead of
+   relying on someone noticing the small corner hint. */
+#fs-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(5,6,8,0.88);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#fs-prompt.active { display: flex; }
+#fs-prompt button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 26px;
+  background: #97C459;
+  color: #050608;
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#fs-prompt .skip {
+  position: absolute;
+  bottom: 30px;
+  background: none;
+  color: #63666f;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 8px;
+}
 </style>
 </head>
 <body class="">
@@ -300,6 +373,11 @@ body.media-mode #progress-wrap { opacity: 0.85; }
     <button id="code-connect-btn">Connect</button>
     <div class="code-error" id="code-error"></div>
   </div>
+</div>
+
+<div id="fs-prompt">
+  <button id="fs-prompt-btn">⛶ Enter fullscreen</button>
+  <button class="skip" id="fs-prompt-skip">Not now</button>
 </div>
 
 <div id="media-overlay">
@@ -324,6 +402,7 @@ body.media-mode #progress-wrap { opacity: 0.85; }
 <div id="timer" aria-live="polite" aria-label="countdown timer">--:--</div>
 <div id="status">Waiting for operator</div>
 <div id="message" aria-live="polite"></div>
+<div id="extra-note" aria-live="polite"></div>
 
 <div class="bar bot">
   <div class="bar-g"></div>
@@ -374,6 +453,9 @@ async function connectWithCode(codeRaw) {
     const eventDoc = snap.docs[0];
     localStorage.setItem(CODE_STORAGE_KEY, JSON.stringify({ eventId: eventDoc.id, displayCode: code }));
     connectToEvent(eventDoc.id);
+    // This click is a real user gesture, so fullscreen is allowed here
+    // even though it isn't on an unattended auto-reconnect.
+    enterFullscreen();
   } catch (err) {
     console.error('Failed to connect with code:', err);
     codeError.textContent = 'Could not connect — try again';
@@ -402,6 +484,9 @@ codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') connectWit
     const snap = await getDoc(doc(db, 'events', parsed.eventId));
     if (snap.exists() && snap.data().active !== false && snap.data().displayCode === parsed.displayCode) {
       connectToEvent(parsed.eventId);
+      // No click happened on this page load, so the browser won't
+      // let us go fullscreen automatically — ask instead.
+      if (!document.fullscreenElement) showFullscreenPrompt();
       return;
     }
   } catch (err) {
@@ -424,7 +509,10 @@ const state = {
   running: false,
   message: '',
   warnYellow: 120,
-  warnRed: 30
+  warnRed: 30,
+  blank: false,
+  extraNote: '',
+  extraNoteAt: 0
 };
 
 const mediaOverlay = document.getElementById('media-overlay');
@@ -500,12 +588,30 @@ function render() {
     msgEl.classList.remove('visible');
   }
 
-  document.body.className = state.remaining <= 0 ? 'done' : st;
+  document.body.className = (state.remaining <= 0 ? 'done' : st) + (state.blank ? ' blank' : '');
 
   const pct = state.totalSecs > 0 ? state.remaining / state.totalSecs : 1;
   const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, pct)));
   document.getElementById('progress-circle').style.strokeDashoffset = offset;
+
+  updateExtraNote();
 }
+
+// Extra-time note fades on its own after a few seconds — checked on a
+// timer rather than only on Firestore updates, so it disappears even
+// if the operator makes no further changes while it's showing.
+const EXTRA_NOTE_MS = 4500;
+function updateExtraNote() {
+  const el = document.getElementById('extra-note');
+  const recent = state.extraNote && (Date.now() - state.extraNoteAt) < EXTRA_NOTE_MS;
+  if (recent) {
+    el.textContent = state.extraNote;
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+  }
+}
+setInterval(updateExtraNote, 500);
 
 // Local fallback ticker — runs continuously regardless of Firestore
 // connectivity. Firestore updates (below) periodically resync it to
@@ -531,6 +637,9 @@ function bindTimerListener() {
     state.totalSecs = data.totalSecs;
     state.running = data.running;
     state.message = data.message || '';
+    state.blank = !!data.blank;
+    state.extraNote = data.extraNote || '';
+    state.extraNoteAt = data.extraNoteAt || 0;
     if (typeof data.warnYellow === 'number') state.warnYellow = data.warnYellow;
     if (typeof data.warnRed === 'number') state.warnRed = data.warnRed;
 
@@ -588,7 +697,7 @@ function changeCode() {
   codeInput.focus();
 }
 window.changeCode = changeCode;
-  
+
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(() => {});
@@ -597,6 +706,25 @@ function toggleFullscreen() {
   }
 }
 window.toggleFullscreen = toggleFullscreen;
+
+function enterFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+const fsPrompt = document.getElementById('fs-prompt');
+function showFullscreenPrompt() { fsPrompt.classList.add('active'); }
+function hideFullscreenPrompt() { fsPrompt.classList.remove('active'); }
+
+document.getElementById('fs-prompt-btn').addEventListener('click', () => {
+  enterFullscreen();
+  hideFullscreenPrompt();
+});
+document.getElementById('fs-prompt-skip').addEventListener('click', hideFullscreenPrompt);
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) hideFullscreenPrompt();
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'f' || e.key === 'F') toggleFullscreen();
