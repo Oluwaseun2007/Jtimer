@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.jtimer_three.twa",
+        "sha256_cert_fingerprints": ["5D:0E:75:4F:C3:5A:D0:06:FE:9D:06:A9:8B:E0:B1:57:30:C1:67:7E:22:BE:93:D6:2B:07:22:20:C8:FB:16:6B"]
+      }
+    }]
