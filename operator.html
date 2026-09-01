@@ -59,7 +59,6 @@ body {
   letter-spacing: -0.006em;
 }
 
-/* ---------- Header ---------- */
 header {
   padding: 16px 28px;
   border-bottom: 1px solid var(--border);
@@ -128,7 +127,6 @@ header {
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-/* ---------- Main layout ---------- */
 main {
   flex: 1;
   padding: 40px 24px 8px;
@@ -140,7 +138,6 @@ main {
   width: 100%;
 }
 
-/* ---------- Hero preview ---------- */
 .preview-section { display: flex; flex-direction: column; gap: 10px; }
 
 .section-eyebrow {
@@ -216,7 +213,6 @@ main {
   letter-spacing: 0.01em;
 }
 
-/* ---------- Grouped sections (Settings-style) ---------- */
 .section { display: flex; flex-direction: column; gap: 10px; }
 
 .group {
@@ -235,7 +231,6 @@ main {
 }
 .row + .row { border-top: 1px solid var(--border); }
 
-/* ---------- Duration field ---------- */
 .duration-field {
   display: flex;
   align-items: stretch;
@@ -279,7 +274,6 @@ main {
   margin-top: 3px;
 }
 
-/* ---------- Presets ---------- */
 .presets-grid {
   display: flex;
   flex-wrap: wrap;
@@ -303,7 +297,6 @@ main {
 .preset:active { transform: scale(0.94); }
 .preset:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
-/* ---------- Playback segmented control ---------- */
 .controls-bar {
   display: flex;
 }
@@ -336,7 +329,8 @@ main {
 .btn.stop { color: var(--danger-dim); }
 .btn.stop:hover { background: var(--danger-soft); }
 
-/* ---------- Warning rows ---------- */
+.btn.adjust:hover { background: var(--primary-soft); color: var(--primary); }
+
 .warn-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 }
@@ -372,7 +366,6 @@ main {
 .stepper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .stepper .unit { font-size: 11.5px; color: var(--text-faint); font-weight: 590; padding-right: 10px; }
 
-/* ---------- Message row ---------- */
 .msg-row {
   display: flex;
   align-items: center;
@@ -411,7 +404,6 @@ main {
 .icon-btn.clear { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
 .icon-btn.clear:hover { background: var(--hover); color: var(--text); }
 
-/* ---------- Open display link ---------- */
 .open-display-btn { padding-bottom: 4px; }
 .open-display-btn a {
   display: flex;
@@ -441,16 +433,170 @@ footer {
   font-weight: 500;
 }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 560px) {
   header { padding: 14px 18px; }
   main { padding: 28px 16px 8px; gap: 28px; }
   .preview { padding: 44px 20px 34px; border-radius: 22px; }
   .duration-field input[type=number] { font-size: 24px; }
 }
+
+/* ---------- PIN gate ---------- */
+.pin-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 20px;
+}
+.pin-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-large);
+  padding: 28px 24px;
+  text-align: center;
+}
+.pin-title {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.pin-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.pin-card input[type=password] {
+  width: 100%;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: 0.2em;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.pin-card input[type=password]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.pin-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 610;
+  cursor: pointer;
+  transition: background .16s var(--ease-out);
+}
+.pin-btn:hover { background: var(--primary-hover); }
+.pin-error {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 590;
+  color: var(--danger-dim);
+}
+
+/* ---------- Welcome / account gate ---------- */
+.pin-card .event-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  padding: 3px;
+}
+.pin-card .event-tab {
+  flex: 1;
+  padding: 8px;
+  font-size: 12.5px;
+  font-weight: 610;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.pin-card .event-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-xs); }
+.pin-card input[type=text] {
+  width: 100%;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 590;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.pin-card input[type=text]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+/* Account fields (username/password) read better left-aligned than
+   the centered, widely-tracked style used for the old short PIN. */
+.pin-card input.acct-field {
+  text-align: left;
+  letter-spacing: normal;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+#panel-signup, #panel-login { display: none; }
+#panel-signup.active, #panel-login.active { display: block; }
+.event-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
+
+<div class="pin-gate" id="welcome-gate" style="display:none;">
+  <div class="pin-card">
+    <div class="pin-title">Stage Timer</div>
+    <div class="pin-sub">Create an account or log in to run your event</div>
+    <div class="event-tabs">
+      <button class="event-tab active" id="tab-signup" onclick="switchWelcomeTab('signup')">Create account</button>
+      <button class="event-tab" id="tab-login" onclick="switchWelcomeTab('login')">Log in</button>
+    </div>
+    <div id="panel-signup" class="active">
+      <input type="text" id="signup-event-name" placeholder="Event name (e.g. Sunday Service)" maxlength="60">
+      <input type="text" class="acct-field" id="signup-username" placeholder="Choose a username" maxlength="30" autocomplete="off">
+      <input type="password" class="acct-field" id="signup-password" placeholder="Choose a password" maxlength="40" autocomplete="new-password">
+      <input type="password" class="acct-field" id="signup-password-confirm" placeholder="Confirm password" maxlength="40" autocomplete="new-password">
+      <button class="pin-btn" id="signup-btn">Create account</button>
+    </div>
+    <div id="panel-login">
+      <input type="text" class="acct-field" id="login-username" placeholder="Username" maxlength="30" autocomplete="off">
+      <input type="password" class="acct-field" id="login-password" placeholder="Password" maxlength="40" autocomplete="current-password">
+      <button class="pin-btn" id="login-btn">Log in</button>
+    </div>
+    <div class="pin-error" id="welcome-error"></div>
+  </div>
+</div>
 
 <header>
   <div class="brand">
@@ -459,12 +605,20 @@ footer {
     </div>
     <div>
       <div class="brand-title">Stage Timer</div>
-      <div class="brand-sub">Operator console</div>
+      <div class="brand-sub" id="event-name-label">Operator console</div>
     </div>
   </div>
-  <div id="channel-status">
-    <div class="dot-live off" id="live-dot"></div>
-    <span id="live-label">Display not connected</span>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="event-code-badge" id="event-code-badge" onclick="copyDisplayCode()" style="display:none;" title="Click to copy your display password">
+      <span id="event-code-text"></span>
+    </div>
+    <button id="logout-btn" title="Log out" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+    </button>
+    <div id="channel-status">
+      <div class="dot-live off" id="live-dot"></div>
+      <span id="live-label">Display not connected</span>
+    </div>
   </div>
 </header>
 
@@ -529,6 +683,18 @@ footer {
   </div>
 
   <div class="section">
+    <div class="section-eyebrow">Adjust time (works while running)</div>
+    <div class="group">
+      <div class="controls-bar">
+        <button class="btn adjust" onclick="adjustTime(-30)">−30s</button>
+        <button class="btn adjust" onclick="adjustTime(-10)">−10s</button>
+        <button class="btn adjust" onclick="adjustTime(10)">+10s</button>
+        <button class="btn adjust" onclick="adjustTime(30)">+30s</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="section-eyebrow">Warning thresholds</div>
     <div class="group">
       <div class="row">
@@ -565,6 +731,31 @@ footer {
     </div>
   </div>
 
+  <div class="section">
+    <div class="section-eyebrow">Display media (optional)</div>
+    <div class="group">
+      <div class="row">
+        <label for="media-type">Type</label>
+        <select id="media-type" class="stepper" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg); font-family: inherit; font-size: 13.5px; color: var(--text);">
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+        </select>
+      </div>
+      <div class="msg-row">
+        <input type="text" id="media-url-input" placeholder="https://…/slide.jpg or .mp4">
+        <button class="icon-btn send" onclick="showMedia()" title="Show on display" aria-label="Show media">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+        </button>
+        <button class="icon-btn clear" onclick="clearMedia()" title="Clear" aria-label="Clear media">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="row" style="padding-top: 0;">
+        <span id="media-status" style="font-size: 12.5px; color: var(--text-faint); font-weight: 590;">No media showing — display shows the countdown</span>
+      </div>
+    </div>
+  </div>
+
   <div class="open-display-btn">
     <a href="display.html" target="_blank" id="display-link">
       Open display screen
@@ -572,22 +763,198 @@ footer {
     </a>
   </div>
 
+
+
 </main>
 
 <footer>Runs on Firebase — display screen can be on a different device, as long as both have internet access.</footer>
 
 <script type="module">
 
-import { db, doc, setDoc, onSnapshot } from "./firebase.js";
+import { db, doc, getDoc, collection, setDoc, onSnapshot, query, where, getDocs } from "./firebase.js";
 
-const timerRef = doc(db, "timer", "current");
-const presenceRef = doc(db, "timer", "presence");
+// --- Access code gate ---
+// The operator's own access code is chosen by whoever opens this page
+// first (setup mode) and stored in Firestore (settings/operator), so
+// it isn't baked into the code. Anyone who knows/guesses it can still
+// get in — Firestore rules are open — so treat it as a soft deterrent,
+// same as before, not real security.
+const clientId = 'op-' + Math.random().toString(36).slice(2, 10);
+
+const welcomeGate = document.getElementById('welcome-gate');
+const welcomeError = document.getElementById('welcome-error');
+const ACCOUNT_STORAGE_KEY = 'jtimer_operator_session';
+
+let timerRef = null;
+let myPresenceRef = null;
+let currentEventId = null;
+
+function switchWelcomeTab(tab) {
+  document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('panel-signup').classList.toggle('active', tab === 'signup');
+  document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+  welcomeError.textContent = '';
+}
+window.switchWelcomeTab = switchWelcomeTab;
+
+function generateDisplayCode() {
+  return 'STG-' + Math.floor(1000 + Math.random() * 9000);
+}
+
+async function createAccount() {
+  welcomeError.textContent = '';
+  const eventName = document.getElementById('signup-event-name').value.trim();
+  const username = document.getElementById('signup-username').value.trim().toLowerCase();
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-password-confirm').value;
+
+  if (!eventName) { welcomeError.textContent = 'Enter an event name'; return; }
+  if (!username) { welcomeError.textContent = 'Choose a username'; return; }
+  if (!password) { welcomeError.textContent = 'Choose a password'; return; }
+  if (password !== confirm) { welcomeError.textContent = 'Passwords don\u2019t match'; return; }
+
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true;
+  try {
+    const accountRef = doc(db, 'operatorAccounts', username);
+    const existing = await getDoc(accountRef);
+    if (existing.exists()) {
+      welcomeError.textContent = 'That username is taken — try another, or log in instead';
+      return;
+    }
+
+    const eventId = 'evt_' + Math.random().toString(36).slice(2, 10);
+    let code = generateDisplayCode();
+    for (let i = 0; i < 5; i++) {
+      const snap = await getDocs(query(collection(db, 'events'), where('displayCode', '==', code)));
+      if (snap.empty) break;
+      code = generateDisplayCode();
+    }
+
+    await setDoc(doc(db, 'events', eventId), {
+      name: eventName, displayCode: code, createdAt: Date.now(), active: true
+    });
+    await setDoc(accountRef, {
+      username, password, eventId, eventName, displayCode: code, createdAt: Date.now()
+    });
+
+    const session = { username, eventId, eventName, displayCode: code };
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(session));
+    enterSession(session);
+  } catch (err) {
+    console.error('Failed to create account:', err);
+    welcomeError.textContent = 'Could not create account — try again';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function logIn() {
+  welcomeError.textContent = '';
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  if (!username || !password) { welcomeError.textContent = 'Enter your username and password'; return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  try {
+    const snap = await getDoc(doc(db, 'operatorAccounts', username));
+    if (!snap.exists() || snap.data().password !== password) {
+      welcomeError.textContent = 'Incorrect username or password';
+      return;
+    }
+    const data = snap.data();
+    const session = { username, eventId: data.eventId, eventName: data.eventName, displayCode: data.displayCode };
+    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(session));
+    enterSession(session);
+  } catch (err) {
+    console.error('Failed to log in:', err);
+    welcomeError.textContent = 'Could not log in — try again';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('signup-btn').addEventListener('click', createAccount);
+document.getElementById('login-btn').addEventListener('click', logIn);
+document.getElementById('signup-password-confirm').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
+document.getElementById('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') logIn(); });
+document.getElementById('logout-btn').addEventListener('click', logOut);
+
+function logOut() {
+  localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+  location.reload();
+}
+
+function copyDisplayCode() {
+  const code = document.getElementById('event-code-text').textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+}
+window.copyDisplayCode = copyDisplayCode;
+
+function enterSession(session) {
+  welcomeGate.style.display = 'none';
+  document.getElementById('event-name-label').textContent = session.eventName;
+  document.getElementById('event-code-badge').style.display = 'inline-flex';
+  document.getElementById('event-code-text').textContent = session.displayCode;
+  initEventBindings(session.eventId);
+}
+
+(async function tryAutoLogin() {
+  const saved = localStorage.getItem(ACCOUNT_STORAGE_KEY);
+  if (!saved) { welcomeGate.style.display = 'flex'; return; }
+  try {
+    const session = JSON.parse(saved);
+    const snap = await getDoc(doc(db, 'operatorAccounts', session.username));
+    if (snap.exists()) {
+      const data = snap.data();
+      enterSession({ username: session.username, eventId: data.eventId, eventName: data.eventName, displayCode: data.displayCode });
+      return;
+    }
+  } catch (err) {
+    console.error('Failed to restore session:', err);
+  }
+  localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+  welcomeGate.style.display = 'flex';
+})();
+
+
+function sendPresenceHeartbeat() {
+  if (!myPresenceRef || !currentEventId) return;
+  setDoc(myPresenceRef, { eventId: currentEventId, type: 'operator', lastSeen: Date.now() }).catch((err) => {
+    console.error('Failed to send operator presence heartbeat:', err);
+  });
+}
+
+function initEventBindings(eventId) {
+  currentEventId = eventId;
+  timerRef = doc(db, 'eventData', eventId);
+  myPresenceRef = doc(db, 'presence', `${eventId}_${clientId}`);
+
+  sendPresenceHeartbeat();
+  setInterval(sendPresenceHeartbeat, 2000);
+
+  onSnapshot(
+    query(collection(db, 'presence'), where('eventId', '==', eventId), where('type', '==', 'display')),
+    (snap) => {
+      let latest = 0;
+      snap.forEach((d) => { const ls = d.data().lastSeen || 0; if (ls > latest) latest = ls; });
+      lastDisplaySeen = latest;
+    },
+    (err) => console.error('Presence listener error:', err)
+  );
+
+  resetTimer();
+}
 
 let totalSecs = 5 * 60;
 let remaining = totalSecs;
 let interval = null;
 let running = false;
 let currentMsg = '';
+let currentMediaUrl = '';
+let currentMediaType = 'image';
 let lastDisplaySeen = 0;
 
 function pad(n) { return String(n).padStart(2,'0'); }
@@ -624,6 +991,8 @@ function getStatusText() {
 }
 
 async function broadcast() {
+  if (!timerRef) return;
+  const w = getWarnings();
   try {
     await setDoc(timerRef, {
       remaining,
@@ -633,6 +1002,10 @@ async function broadcast() {
       status: getStatusText(),
       message: currentMsg,
       fmt: remaining > 0 ? fmt(remaining) : '00:00',
+      warnYellow: w.yellow,
+      warnRed: w.red,
+      mediaUrl: currentMediaUrl,
+      mediaType: currentMediaType,
       updated: Date.now()
     });
   } catch (err) {
@@ -697,6 +1070,18 @@ function setPreset(h, m, s) {
   resetTimer();
 }
 
+// On-the-fly time adjustment — nudge the running (or paused) countdown
+// without resetting it. Keeps totalSecs in step so the progress ring
+// and warning thresholds stay meaningful after the change.
+function adjustTime(delta) {
+  remaining = Math.max(0, remaining + delta);
+  totalSecs = Math.max(totalSecs + delta, remaining);
+  if (remaining > 0 && !running) {
+    document.getElementById('btn-start').disabled = false;
+  }
+  updatePreview();
+}
+
 function sendMessage() {
   currentMsg = document.getElementById('msg-input').value.trim();
   updatePreview();
@@ -708,12 +1093,31 @@ function clearMessage() {
   updatePreview();
 }
 
-// Expose to inline onclick handlers — functions declared in a module
-// are not attached to window by default.
+function showMedia() {
+  const url = document.getElementById('media-url-input').value.trim();
+  if (!url) return;
+  currentMediaUrl = url;
+  currentMediaType = document.getElementById('media-type').value;
+  document.getElementById('media-status').textContent =
+    'Live on display: ' + (currentMediaType === 'video' ? 'video' : 'image');
+  updatePreview();
+}
+
+function clearMedia() {
+  currentMediaUrl = '';
+  document.getElementById('media-url-input').value = '';
+  document.getElementById('media-status').textContent = 'No media showing — display shows the countdown';
+  updatePreview();
+}
+
+window.showMedia = showMedia;
+window.clearMedia = clearMedia;
+
 window.startTimer = startTimer;
 window.pauseTimer = pauseTimer;
 window.resetTimer = resetTimer;
 window.setPreset = setPreset;
+window.adjustTime = adjustTime;
 window.sendMessage = sendMessage;
 window.clearMessage = clearMessage;
 
@@ -721,14 +1125,18 @@ window.clearMessage = clearMessage;
   document.getElementById(id).addEventListener('change', () => { if (!running) resetTimer(); });
 });
 
-// Display connection status: the display page writes a heartbeat to
-// timer/presence every couple seconds. We watch it here and treat the
-// display as "offline" if we haven't heard from it recently.
-onSnapshot(presenceRef, (snap) => {
-  if (snap.exists()) {
-    lastDisplaySeen = snap.data().lastSeen || 0;
+// Keyboard shortcuts: space = start/pause toggle, R = reset.
+// Skip when a text/number field has focus so typing isn't hijacked.
+document.addEventListener('keydown', (e) => {
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    running ? pauseTimer() : startTimer();
+  } else if (e.key === 'r' || e.key === 'R') {
+    resetTimer();
   }
-}, (err) => console.error('Presence listener error:', err));
+});
 
 setInterval(() => {
   const connected = (Date.now() - lastDisplaySeen) < 5000;
@@ -736,7 +1144,6 @@ setInterval(() => {
   document.getElementById('live-label').textContent = connected ? 'Display connected' : 'Display not connected';
 }, 1000);
 
-resetTimer();
 </script>
 </body>
 </html>

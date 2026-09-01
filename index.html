@@ -2,10 +2,163 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=operator.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stage Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;590;650;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-soft: #EAF1FF;
+  --text: #0F172A;
+  --text-muted: #6B7280;
+  --text-faint: #98A2B3;
+  --border: #E5E9F0;
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+  --shadow-soft: 0 8px 24px rgba(15,23,42,.06);
+  --r-lg: 22px;
+  --r-md: 14px;
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: -0.006em;
+  padding: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+.brand-mark {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-mark svg { width: 18px; height: 18px; }
+.brand-title { font-size: 18px; font-weight: 650; letter-spacing: -0.015em; }
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--text);
+  transition: box-shadow .18s var(--ease-out), border-color .18s var(--ease-out), transform .12s var(--ease-out);
+}
+.card:hover { box-shadow: var(--shadow-soft); border-color: #C7DAFC; transform: translateY(-1px); }
+.card:active { transform: scale(0.99); }
+
+.card-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.card-icon svg { width: 22px; height: 22px; }
+
+.card-text { flex: 1; }
+.card-title { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 2px; }
+.card-sub { font-size: 12.5px; color: var(--text-muted); font-weight: 500; line-height: 1.4; }
+
+.card-arrow { color: var(--text-faint); flex-shrink: 0; }
+.card-arrow svg { width: 16px; height: 16px; }
+
+footer {
+  margin-top: 36px;
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: center;
+}
+</style>
 </head>
 <body>
-<p>Redirecting to the <a href="operator.html">operator console</a>…</p>
+
+<div class="brand">
+  <div class="brand-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="13" r="8"/><path d="M9 2h6"/></svg>
+  </div>
+  <div class="brand-title">Stage Timer</div>
+</div>
+
+<div class="cards">
+  <a class="card" href="operator.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </div>
+    <div class="card-text">
+      <div class="card-title">Operator</div>
+      <div class="card-sub">Run the countdown, messages, and media for an event</div>
+    </div>
+    <div class="card-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </a>
+
+  <a class="card" href="display.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </div>
+    <div class="card-text">
+      <div class="card-title">Display</div>
+      <div class="card-sub">The countdown screen for the stage or venue</div>
+    </div>
+    <div class="card-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </a>
+
+  <a class="card" href="admin.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg>
+    </div>
+    <div class="card-text">
+      <div class="card-title">Admin</div>
+      <div class="card-sub">See every event and who's connected right now</div>
+    </div>
+    <div class="card-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+  </a>
+</div>
+
+<footer>Each page has its own access code.</footer>
+
 </body>
 </html>

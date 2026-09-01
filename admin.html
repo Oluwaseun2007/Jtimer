@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stage Timer — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;590;650;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --primary: #2563EB;
+  --primary-soft: #EAF1FF;
+  --success: #22C55E;
+  --success-soft: #E9FBF0;
+  --danger: #EF4444;
+  --danger-soft: #FEEDEC;
+  --text: #0F172A;
+  --text-muted: #6B7280;
+  --text-faint: #98A2B3;
+  --border: #E5E9F0;
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+  --shadow-soft: 0 8px 24px rgba(15,23,42,.06);
+  --shadow-large: 0 24px 60px rgba(15,23,42,.14);
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-pill: 999px;
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  letter-spacing: -0.006em;
+}
+
+header {
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(248,250,252,0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: var(--primary);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-mark svg { width: 16px; height: 16px; }
+.brand-title { font-size: 15px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; }
+.brand-sub { font-size: 12px; color: var(--text-muted); font-weight: 500; line-height: 1.25; }
+
+main {
+  flex: 1;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.section-eyebrow {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.count-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 22px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.count-num {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.count-label {
+  font-size: 13px;
+  font-weight: 590;
+  color: var(--text-muted);
+}
+
+.group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.client-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+}
+.client-row + .client-row { border-top: 1px solid var(--border); }
+
+.client-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-soft);
+  flex-shrink: 0;
+}
+.client-dot.stale { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+
+.client-type {
+  font-size: 13.5px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.client-id {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-family: "Inter", monospace;
+  flex: 1;
+}
+
+.client-seen {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 590;
+}
+
+.empty-note {
+  padding: 20px 18px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+}
+.event-row + .event-row { border-top: 1px solid var(--border); }
+.event-row .ev-name { font-size: 14px; font-weight: 650; }
+.event-row .ev-code { font-size: 12px; color: var(--text-faint); font-family: monospace; }
+.event-row .ev-fmt { font-family: monospace; font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 650; margin-left: auto; }
+.event-row .ev-counts { font-size: 12px; color: var(--text-muted); font-weight: 590; white-space: nowrap; }
+
+.timer-snapshot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+.timer-snapshot .fmt {
+  font-family: "Inter", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 24px;
+  font-weight: 700;
+}
+.timer-snapshot .status {
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* --- PIN gate --- */
+#pin-gate {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  flex-direction: column;
+  gap: 16px;
+}
+#pin-gate .box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-large);
+  padding: 32px 28px;
+  width: 280px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+#pin-gate h2 { font-size: 16px; font-weight: 650; }
+#pin-gate input {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 0.3em;
+  outline: none;
+  font-family: monospace;
+}
+#pin-gate input:focus { border-color: var(--primary); }
+#pin-gate button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+#pin-error { font-size: 12.5px; color: var(--danger); min-height: 16px; }
+
+footer {
+  padding: 18px 24px 26px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+</style>
+</head>
+<body>
+
+<div id="pin-gate">
+  <div class="box">
+    <h2>Admin access</h2>
+    <input type="password" id="pin-input" inputmode="numeric" placeholder="Enter code" maxlength="6">
+    <div id="pin-error"></div>
+    <button id="pin-submit">Unlock</button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="13" r="8"/><path d="M9 2h6"/></svg>
+    </div>
+    <div>
+      <div class="brand-title">Admin panel</div>
+      <div class="brand-sub">Connected operators &amp; displays</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div>
+    <div class="section-eyebrow" style="margin-bottom:10px;">PLATFORM — CONNECTED NOW</div>
+    <div class="counts">
+      <div class="count-card">
+        <div class="count-num" id="event-count">0</div>
+        <div class="count-label">Events</div>
+      </div>
+      <div class="count-card">
+        <div class="count-num" id="operator-count">0</div>
+        <div class="count-label">Operators online</div>
+      </div>
+      <div class="count-card">
+        <div class="count-num" id="display-count">0</div>
+        <div class="count-label">Displays online</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-eyebrow" style="margin-bottom:10px;">EVENTS</div>
+    <div class="group" id="events-list">
+      <div class="empty-note">No events yet</div>
+    </div>
+  </div>
+</main>
+
+<footer>A client counts as connected if it has sent a heartbeat in the last 8 seconds. Each event's operator/display data is isolated from every other event.</footer>
+
+<script type="module">
+
+import { db, doc, collection, onSnapshot } from "./firebase.js";
+
+// --- Access code gate ---
+// Separate from the operator PIN. Change to whatever code you want
+// admins to use. Like the operator gate, this only hides the UI —
+// it isn't real security since Firestore rules are open.
+const ADMIN_PIN = '9999';
+
+const pinGate = document.getElementById('pin-gate');
+const pinInput = document.getElementById('pin-input');
+const pinError = document.getElementById('pin-error');
+
+function tryUnlock() {
+  if (pinInput.value === ADMIN_PIN) {
+    sessionStorage.setItem('adminUnlocked', '1');
+    pinGate.style.display = 'none';
+  } else {
+    pinError.textContent = 'Incorrect code — try again';
+    pinInput.value = '';
+    pinInput.focus();
+  }
+}
+document.getElementById('pin-submit').addEventListener('click', tryUnlock);
+pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+
+if (sessionStorage.getItem('adminUnlocked') === '1') {
+  pinGate.style.display = 'none';
+} else {
+  pinInput.focus();
+}
+
+// --- Platform-wide data ---
+// The admin page reads across every event's presence records — this is
+// the one place that's allowed to see everything; operators/displays
+// only ever see their own event's data.
+const STALE_MS = 8000;
+let events = {};   // eventId -> { name, displayCode, createdAt }
+let presence = {}; // clientDocId -> { eventId, type, lastSeen }
+
+function timeAgo(ts) {
+  const secs = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  return secs < 1 ? 'just now' : secs + 's ago';
+}
+
+function render() {
+  const eventIds = Object.keys(events).sort((a, b) => (events[b].createdAt || 0) - (events[a].createdAt || 0));
+  const list = document.getElementById('events-list');
+
+  let totalOperators = 0;
+  let totalDisplays = 0;
+
+  if (eventIds.length === 0) {
+    list.innerHTML = '<div class="empty-note">No events yet</div>';
+  } else {
+    list.innerHTML = eventIds.map(eventId => {
+      const ev = events[eventId];
+      const clientsForEvent = Object.values(presence).filter(p => p.eventId === eventId);
+      const activeOperators = clientsForEvent.filter(p => p.type === 'operator' && (Date.now() - p.lastSeen) <= STALE_MS).length;
+      const activeDisplays = clientsForEvent.filter(p => p.type === 'display' && (Date.now() - p.lastSeen) <= STALE_MS).length;
+      totalOperators += activeOperators;
+      totalDisplays += activeDisplays;
+      return `<div class="event-row">
+        <div>
+          <div class="ev-name">${ev.name || 'Untitled event'}</div>
+          <div class="ev-code">${ev.displayCode || ''}</div>
+        </div>
+        <div class="ev-counts">${activeOperators} operator${activeOperators === 1 ? '' : 's'} · ${activeDisplays} display${activeDisplays === 1 ? '' : 's'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('event-count').textContent = eventIds.length;
+  document.getElementById('operator-count').textContent = totalOperators;
+  document.getElementById('display-count').textContent = totalDisplays;
+}
+
+onSnapshot(collection(db, 'events'), (snap) => {
+  const next = {};
+  snap.forEach((docSnap) => { next[docSnap.id] = docSnap.data(); });
+  events = next;
+  render();
+}, (err) => console.error('Events collection listener error:', err));
+
+onSnapshot(collection(db, 'presence'), (snap) => {
+  const next = {};
+  snap.forEach((docSnap) => {
+    const d = docSnap.data();
+    next[docSnap.id] = { eventId: d.eventId, type: d.type, lastSeen: d.lastSeen || 0 };
+  });
+  presence = next;
+  render();
+}, (err) => console.error('Presence collection listener error:', err));
+
+// Re-render every second so "active" status and timings stay current
+// even between Firestore updates.
+setInterval(render, 1000);
+
+
+</script>
+</body>
+</html>

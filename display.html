@@ -37,7 +37,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ambient glow field — sits behind everything, colour-shifts with state */
 body::before {
   content: "";
   position: absolute;
@@ -57,7 +56,6 @@ body.yellow { background: #080602; }
 body.red    { background: #090303; }
 body.done   { background: #090303; }
 
-/* Single hairline accent — top and bottom, echoes the current state */
 .bar {
   position: absolute; left: 0; right: 0;
   height: 2px;
@@ -128,7 +126,6 @@ body.green  #message { color: #8FBE63; }
 body.yellow #message { color: #E8A94A; }
 body.red    #message, body.done #message { color: #E2726F; }
 
-/* Progress ring */
 #progress-wrap {
   position: absolute;
   top: 26px; right: 30px;
@@ -151,7 +148,6 @@ body.green  #progress-circle { stroke: #97C459; }
 body.yellow #progress-circle { stroke: #EF9F27; }
 body.red    #progress-circle { stroke: #E24B4A; }
 
-/* Offline notice */
 #offline {
   position: absolute;
   top: 24px; left: 30px;
@@ -162,10 +158,10 @@ body.red    #progress-circle { stroke: #E24B4A; }
   text-transform: uppercase;
   transition: color 0.5s var(--transition);
   z-index: 2;
+  max-width: 40vw;
 }
 #offline.active { color: #63666f; }
 
-/* Fullscreen hint */
 #fullscreen-hint {
   position: absolute;
   bottom: 22px; right: 30px;
@@ -179,14 +175,137 @@ body.red    #progress-circle { stroke: #E24B4A; }
 }
 #fullscreen-hint:hover { color: #63666f; }
 
-/* Time's up — gentle, dignified pulse */
+#change-code-hint {
+  position: absolute;
+  bottom: 22px; left: 30px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #1C1E22;
+  cursor: pointer;
+  letter-spacing: 0.07em;
+  transition: color 0.3s;
+  z-index: 2;
+}
+#change-code-hint:hover { color: #63666f; }
+
 @keyframes timesup-pulse {
   0%,100% { opacity: 1; } 50% { opacity: 0.58; }
 }
 body.done #timer { animation: timesup-pulse 1.6s ease-in-out infinite; }
+
+/* ---------- Display code gate ---------- */
+#code-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #050608;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+}
+#code-gate .box {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  padding: 0 24px;
+}
+#code-gate h1 {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6B7280;
+  margin-bottom: 18px;
+}
+#code-gate input {
+  width: 100%;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 14px;
+  border: 1px solid #2A2C31;
+  border-radius: 12px;
+  outline: none;
+  background: #0B0D11;
+  color: #F5F6F8;
+  margin-bottom: 12px;
+  font-family: var(--font-timer);
+}
+#code-gate input:focus { border-color: #97C459; }
+#code-gate button {
+  width: 100%;
+  padding: 13px;
+  background: #97C459;
+  color: #050608;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+#code-gate .code-error {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #E24B4A;
+  font-weight: 600;
+}
+
+/* ---------- Media takeover (image/video pushed from operator) ---------- */
+#media-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+#media-overlay.active { display: flex; }
+#media-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 38%);
+  pointer-events: none;
+}
+#media-overlay img,
+#media-overlay video {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Shrink the countdown into a legible overlay when media is showing,
+   instead of competing with it for the whole screen. */
+body.media-mode #timer {
+  font-size: clamp(44px, 8vw, 110px);
+}
+body.media-mode #progress-wrap { opacity: 0.85; }
 </style>
 </head>
 <body class="">
+
+<div id="code-gate">
+  <div class="box">
+    <h1>Stage Timer — Display</h1>
+    <input type="text" id="code-input" placeholder="STG-4821" maxlength="12">
+    <button id="code-connect-btn">Connect</button>
+    <div class="code-error" id="code-error"></div>
+  </div>
+</div>
+
+<div id="media-overlay">
+  <img id="media-img" alt="" style="display:none;">
+  <video id="media-video" muted loop playsinline style="display:none;"></video>
+</div>
 
 <div class="bar top">
   <div class="bar-g"></div>
@@ -213,53 +332,263 @@ body.done #timer { animation: timesup-pulse 1.6s ease-in-out infinite; }
 </div>
 
 <div id="fullscreen-hint" onclick="toggleFullscreen()" title="Toggle fullscreen">⛶ fullscreen</div>
+<div id="change-code-hint" onclick="changeCode()" title="Connect to a different event">⚙ change code</div>
 
 <script type="module">
 
-import { db, doc, setDoc, onSnapshot } from "./firebase.js";
+import { db, doc, getDoc, collection, setDoc, onSnapshot, query, where, getDocs } from "./firebase.js";
 
-const timerRef = doc(db, "timer", "current");
-const presenceRef = doc(db, "timer", "presence");
 const CIRCUMFERENCE = 2 * Math.PI * 19;
+const CODE_STORAGE_KEY = 'jtimer_display_event';
+const clientId = 'disp-' + Math.random().toString(36).slice(2, 10);
+
+let timerRef = null;
+let myPresenceRef = null;
+let currentEventId = null;
+let unsubscribeTimer = null;
+
+function sendClientPresenceHeartbeat() {
+  if (!myPresenceRef || !currentEventId) return;
+  setDoc(myPresenceRef, { eventId: currentEventId, type: 'display', lastSeen: Date.now() }).catch((err) => {
+    console.error('Failed to send display client presence heartbeat:', err);
+  });
+}
+setInterval(sendClientPresenceHeartbeat, 2000);
+
+const codeGate = document.getElementById('code-gate');
+const codeInput = document.getElementById('code-input');
+const codeError = document.getElementById('code-error');
+
+async function connectWithCode(codeRaw) {
+  codeError.textContent = '';
+  const code = (codeRaw || '').trim().toUpperCase();
+  if (!code) { codeError.textContent = 'Enter a display code'; return; }
+  const btn = document.getElementById('code-connect-btn');
+  btn.disabled = true;
+  try {
+    const snap = await getDocs(query(collection(db, 'events'), where('displayCode', '==', code)));
+    if (snap.empty) {
+      codeError.textContent = 'No event found with that code';
+      return;
+    }
+    const eventDoc = snap.docs[0];
+    localStorage.setItem(CODE_STORAGE_KEY, JSON.stringify({ eventId: eventDoc.id, displayCode: code }));
+    connectToEvent(eventDoc.id);
+  } catch (err) {
+    console.error('Failed to connect with code:', err);
+    codeError.textContent = 'Could not connect — try again';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function connectToEvent(eventId) {
+  currentEventId = eventId;
+  timerRef = doc(db, 'eventData', eventId);
+  myPresenceRef = doc(db, 'presence', `${eventId}_${clientId}`);
+  codeGate.style.display = 'none';
+  sendClientPresenceHeartbeat();
+  bindTimerListener();
+}
+
+document.getElementById('code-connect-btn').addEventListener('click', () => connectWithCode(codeInput.value));
+codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') connectWithCode(codeInput.value); });
+
+(async function tryAutoConnect() {
+  const saved = localStorage.getItem(CODE_STORAGE_KEY);
+  if (!saved) { codeInput.focus(); return; }
+  try {
+    const parsed = JSON.parse(saved);
+    const snap = await getDoc(doc(db, 'events', parsed.eventId));
+    if (snap.exists() && snap.data().active !== false && snap.data().displayCode === parsed.displayCode) {
+      connectToEvent(parsed.eventId);
+      return;
+    }
+  } catch (err) {
+    console.error('Failed to auto-connect saved event:', err);
+  }
+  localStorage.removeItem(CODE_STORAGE_KEY);
+  codeInput.focus();
+})();
 
 let offlineTimeout;
+let haveEverConnected = false;
 
-onSnapshot(timerRef, (snap) => {
-  if (!snap.exists()) return;
-  const { fmt, state, status, message, remaining, totalSecs } = snap.data();
+// Local mirror of the last known server state. When Firestore updates
+// arrive we resync to them (they're authoritative); in between updates,
+// or if the connection drops, this keeps counting down on its own so
+// the display never just freezes mid-show.
+const state = {
+  remaining: 0,
+  totalSecs: 0,
+  running: false,
+  message: '',
+  warnYellow: 120,
+  warnRed: 30
+};
 
-  document.getElementById('offline').classList.remove('active');
-  clearTimeout(offlineTimeout);
-  offlineTimeout = setTimeout(() => {
-    document.getElementById('offline').classList.add('active');
-    document.getElementById('status').textContent = 'Operator offline';
-  }, 5000);
+const mediaOverlay = document.getElementById('media-overlay');
+const mediaImg = document.getElementById('media-img');
+const mediaVideo = document.getElementById('media-video');
+let appliedMediaUrl = '';
+let appliedMediaType = '';
 
-  document.getElementById('timer').textContent = fmt;
-  document.getElementById('status').textContent = status;
+function applyMedia(url, type) {
+  appliedMediaUrl = url;
+  appliedMediaType = type;
+
+  if (!url) {
+    document.body.classList.remove('media-mode');
+    mediaOverlay.classList.remove('active');
+    mediaVideo.pause();
+    mediaVideo.removeAttribute('src');
+    mediaImg.removeAttribute('src');
+    return;
+  }
+
+  document.body.classList.add('media-mode');
+  mediaOverlay.classList.add('active');
+
+  if (type === 'video') {
+    mediaImg.style.display = 'none';
+    mediaVideo.style.display = 'block';
+    mediaVideo.src = url;
+    mediaVideo.play().catch((err) => console.error('Media video play failed:', err));
+  } else {
+    mediaVideo.pause();
+    mediaVideo.style.display = 'none';
+    mediaImg.style.display = 'block';
+    mediaImg.src = url;
+  }
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+function fmt(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0 ? pad(h)+':'+pad(m)+':'+pad(sec) : pad(m)+':'+pad(sec);
+}
+
+function computeState() {
+  if (state.remaining <= 0) return 'done';
+  if (state.remaining <= state.warnRed) return 'red';
+  if (state.remaining <= state.warnYellow) return 'yellow';
+  return 'green';
+}
+
+function computeStatus() {
+  if (state.remaining <= 0) return "TIME'S UP";
+  if (!state.running && state.remaining === state.totalSecs) return 'READY';
+  if (!state.running) return 'PAUSED';
+  const st = computeState();
+  if (st === 'red') return 'FINAL WARNING';
+  if (st === 'yellow') return 'WARNING';
+  return 'RUNNING';
+}
+
+function render() {
+  const st = computeState();
+  document.getElementById('timer').textContent = state.remaining > 0 ? fmt(state.remaining) : '00:00';
+  document.getElementById('status').textContent = computeStatus();
 
   const msgEl = document.getElementById('message');
-  if (message) {
-    msgEl.textContent = message;
+  if (state.message) {
+    msgEl.textContent = state.message;
     msgEl.classList.add('visible');
   } else {
     msgEl.classList.remove('visible');
   }
 
-  document.body.className = remaining <= 0 ? 'done' : state;
+  document.body.className = state.remaining <= 0 ? 'done' : st;
 
-  const pct = totalSecs > 0 ? remaining / totalSecs : 1;
+  const pct = state.totalSecs > 0 ? state.remaining / state.totalSecs : 1;
   const offset = CIRCUMFERENCE * (1 - Math.max(0, Math.min(1, pct)));
   document.getElementById('progress-circle').style.strokeDashoffset = offset;
-}, (err) => console.error('Timer listener error:', err));
+}
 
-// Heartbeat so the operator page can show "display connected".
+// Local fallback ticker — runs continuously regardless of Firestore
+// connectivity. Firestore updates (below) periodically resync it to
+// the true operator-side value, correcting any drift.
 setInterval(() => {
-  setDoc(presenceRef, { lastSeen: Date.now() }).catch((err) => {
-    console.error('Failed to send presence heartbeat:', err);
-  });
-}, 2000);
+  if (state.running && state.remaining > 0) {
+    state.remaining--;
+    if (state.remaining <= 0) {
+      state.remaining = 0;
+      state.running = false;
+    }
+    render();
+  }
+}, 1000);
 
+function bindTimerListener() {
+  unsubscribeTimer = onSnapshot(timerRef, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+
+    haveEverConnected = true;
+    state.remaining = data.remaining;
+    state.totalSecs = data.totalSecs;
+    state.running = data.running;
+    state.message = data.message || '';
+    if (typeof data.warnYellow === 'number') state.warnYellow = data.warnYellow;
+    if (typeof data.warnRed === 'number') state.warnRed = data.warnRed;
+
+    const incomingMediaUrl = data.mediaUrl || '';
+    const incomingMediaType = data.mediaType || '';
+    if (incomingMediaUrl !== appliedMediaUrl || incomingMediaType !== appliedMediaType) {
+      applyMedia(incomingMediaUrl, incomingMediaType);
+    }
+
+    document.getElementById('offline').classList.remove('active');
+    document.getElementById('offline').textContent = 'Waiting for operator';
+    clearTimeout(offlineTimeout);
+    offlineTimeout = setTimeout(() => {
+      // We've stopped hearing from the operator. Keep the local ticker
+      // running on the last known state rather than freezing the display.
+      document.getElementById('offline').classList.add('active');
+      document.getElementById('offline').textContent = 'Operator signal lost — showing last known time';
+    }, 5000);
+
+    render();
+  }, (err) => console.error('Timer listener error:', err));
+}
+
+// Screen wake lock — the single biggest cause of a display going dark
+// mid-show is the device just falling asleep. Re-acquire on visibility
+// change since the OS releases the lock when the tab is hidden.
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch (err) {
+    console.error('Wake lock request failed:', err);
+  }
+}
+requestWakeLock();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+// Lets whoever is at the display swap to a different event's code
+// without needing to find a URL bar or reload the device — useful
+// when the same screen is reused across events.
+function changeCode() {
+  if (unsubscribeTimer) { unsubscribeTimer(); unsubscribeTimer = null; }
+  clearTimeout(offlineTimeout);
+  localStorage.removeItem(CODE_STORAGE_KEY);
+  currentEventId = null;
+  timerRef = null;
+  myPresenceRef = null;
+  codeError.textContent = '';
+  codeInput.value = '';
+  codeGate.style.display = 'flex';
+  codeInput.focus();
+}
+window.changeCode = changeCode;
+  
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(() => {});

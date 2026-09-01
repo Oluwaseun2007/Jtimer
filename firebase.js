@@ -2,9 +2,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebas
 import { 
   getFirestore,
   doc,
+  getDoc,
+  collection,
+  addDoc,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-storage.js";
 
 
 const firebaseConfig = {
@@ -20,9 +32,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export {
   doc,
+  getDoc,
+  collection,
+  addDoc,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  query,
+  where,
+  getDocs,
+  ref,
+  uploadBytes,
+  getDownloadURL
 };
