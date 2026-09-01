@@ -1067,7 +1067,7 @@ function initEventBindings(eventId) {
     (err) => console.error('Presence listener error:', err)
   );
 
-  loadProgram().then(() => resetTimer());
+  restoreEventState();
 }
 
 let totalSecs = 5 * 60;
@@ -1154,11 +1154,8 @@ function updatePreview() {
   broadcast();
 }
 
-function startTimer() {
-  if (running || remaining <= 0) return;
-  running = true;
-  document.getElementById('btn-start').disabled = true;
-  document.getElementById('btn-pause').disabled = false;
+function beginTicking() {
+  clearInterval(interval);
   interval = setInterval(() => {
     remaining--;
     updatePreview();
@@ -1169,6 +1166,14 @@ function startTimer() {
       document.getElementById('btn-pause').disabled = true;
     }
   }, 1000);
+}
+
+function startTimer() {
+  if (running || remaining <= 0) return;
+  running = true;
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-pause').disabled = false;
+  beginTicking();
   updatePreview();
 }
 
@@ -1256,16 +1261,74 @@ function renderProgram() {
   }).join('');
 }
 
-async function loadProgram() {
+// Rebuilds the operator's local state from whatever was last broadcast
+// to Firestore, instead of quietly resetting to the default duration
+// on every refresh. If the operator's clock was running, the elapsed
+// time since the last broadcast is subtracted so the countdown picks
+// up from the correct remaining time, not the stale saved value.
+async function restoreEventState() {
+  let data = null;
   try {
     const snap = await getDoc(timerRef);
-    if (snap.exists() && Array.isArray(snap.data().program)) {
-      program = snap.data().program;
-    }
+    if (snap.exists()) data = snap.data();
   } catch (err) {
-    console.error('Failed to load saved program:', err);
+    console.error('Failed to load saved event state:', err);
   }
+
+  if (data && Array.isArray(data.program)) program = data.program;
   renderProgram();
+
+  const hasTimerState = data && typeof data.remaining === 'number' && typeof data.totalSecs === 'number';
+  if (!hasTimerState) {
+    // Brand-new event, nothing broadcast yet — start from the default
+    // duration fields, same as before.
+    resetTimer();
+    return;
+  }
+
+  totalSecs = data.totalSecs;
+  let restoredRemaining = data.remaining;
+  if (data.running && typeof data.updated === 'number') {
+    const elapsed = Math.floor((Date.now() - data.updated) / 1000);
+    restoredRemaining = Math.max(0, restoredRemaining - elapsed);
+  }
+  remaining = restoredRemaining;
+  currentMsg = data.message || '';
+  currentMediaUrl = data.mediaUrl || '';
+  currentMediaType = data.mediaType || 'image';
+  isBlank = !!data.blank;
+
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  document.getElementById('inp-h').value = h;
+  document.getElementById('inp-m').value = m;
+  document.getElementById('inp-s').value = s;
+  document.getElementById('msg-input').value = currentMsg;
+
+  const blankBtn = document.getElementById('btn-blank');
+  blankBtn.classList.toggle('active', isBlank);
+  blankBtn.lastChild.textContent = isBlank ? ' Restore screen' : ' Blank screen';
+
+  if (currentMediaUrl) {
+    document.getElementById('media-url-input').value = currentMediaUrl;
+    document.getElementById('media-type').value = currentMediaType;
+    document.getElementById('media-status').textContent =
+      'Live on display: ' + (currentMediaType === 'video' ? 'video' : 'image');
+  }
+
+  clearInterval(interval);
+  if (data.running && remaining > 0) {
+    running = true;
+    document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-pause').disabled = false;
+    beginTicking();
+  } else {
+    running = false;
+    document.getElementById('btn-start').disabled = remaining <= 0;
+    document.getElementById('btn-pause').disabled = true;
+  }
+  updatePreview();
 }
 
 function addProgramItem() {
