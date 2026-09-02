@@ -309,8 +309,10 @@ main {
   border-top: 1px solid var(--border);
 }
 .program-row.active { background: var(--primary-soft); }
-.program-row .p-name { flex: 1; font-size: 13.5px; font-weight: 610; }
-.program-row .p-dur { font-family: monospace; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-muted); font-weight: 610; }
+.program-row .p-info { flex: 1; min-width: 0; }
+.program-row .p-name { font-size: 13.5px; font-weight: 610; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.program-row .p-title { font-size: 11.5px; color: var(--text-muted); font-weight: 500; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.program-row .p-dur { font-family: monospace; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--text-muted); font-weight: 610; flex-shrink: 0; }
 .program-row .p-use {
   padding: 6px 13px;
   font-size: 12px;
@@ -335,6 +337,60 @@ main {
 }
 .program-row .p-del:hover { background: var(--danger-soft); color: var(--danger); }
 .program-empty { padding: 16px; font-size: 12.5px; color: var(--text-faint); text-align: center; }
+
+/* ---------- Slide list ---------- */
+.slide-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-top: 1px solid var(--border);
+}
+.slide-row.active { background: var(--primary-soft); }
+.slide-row .s-num {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.slide-row .s-url {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.slide-row .s-go {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 650;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.slide-row .s-go:hover { background: var(--primary-hover); }
+.slide-row .s-del {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.slide-row .s-del:hover { background: var(--danger-soft); color: var(--danger); }
+.slide-empty { padding: 14px 16px; font-size: 12.5px; color: var(--text-faint); text-align: center; }
 
 #btn-blank {
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -690,6 +746,7 @@ footer {
       <div id="preview-time">00:00</div>
       <div id="preview-status">Ready</div>
       <div id="preview-msg"></div>
+      <div id="preview-range" style="font-size:12.5px;font-weight:610;color:var(--text-muted);margin-top:4px;font-variant-numeric:tabular-nums;"></div>
     </div>
   </div>
 
@@ -697,7 +754,10 @@ footer {
     <div class="section-eyebrow">Program</div>
     <div class="group">
       <div class="row" style="gap:8px;">
-        <input type="text" id="prog-name-input" placeholder="Speaker or segment name" maxlength="60" style="flex:1;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);">
+        <input type="text" id="prog-name-input" placeholder="Speaker name" maxlength="60" style="flex:1;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);">
+      </div>
+      <div class="row" style="gap:8px; padding-top:0;">
+        <input type="text" id="prog-title-input" placeholder="Title / topic (optional)" maxlength="80" style="flex:1;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);">
       </div>
       <div class="duration-field" style="padding-top:0;">
         <div class="seg">
@@ -746,6 +806,15 @@ footer {
         <button class="preset" onclick="setPreset(0,3,0)">3 min</button>
         <button class="preset" onclick="setPreset(0,2,0)">2 min</button>
         <button class="preset" onclick="setPreset(0,1,0)">1 min</button>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch; gap:8px; border-top:1px solid var(--border);">
+        <span style="font-size:11.5px;font-weight:650;color:var(--text-faint);letter-spacing:0.04em;text-transform:uppercase;">Or set by time of day</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="time" id="time-start" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);" title="Start time — leave blank to use right now">
+          <span style="color:var(--text-faint);font-size:12.5px;">to</span>
+          <input type="time" id="time-end" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;font-family:inherit;font-size:13.5px;background:var(--bg);color:var(--text);" title="End time">
+        </div>
+        <button class="btn adjust" style="width:100%;" onclick="applyTimeRange()">Use this range</button>
       </div>
     </div>
   </div>
@@ -850,6 +919,28 @@ footer {
     </div>
   </div>
 
+  <div class="section">
+    <div class="section-eyebrow">Slides</div>
+    <div class="group">
+      <div class="msg-row">
+        <input type="text" id="slide-url-input" placeholder="https://…/slide-1.jpg">
+        <button class="icon-btn send" onclick="addSlide()" title="Add slide" aria-label="Add slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+      <div id="slide-list"></div>
+      <div class="row" style="gap:8px;">
+        <button class="btn adjust" style="flex:1;" onclick="prevSlide()">◀ Prev</button>
+        <span id="slide-position" style="font-size:12.5px;font-weight:650;color:var(--text-muted);white-space:nowrap;">No slides</span>
+        <button class="btn adjust" style="flex:1;" onclick="nextSlide()">Next ▶</button>
+      </div>
+      <div class="row" style="gap:8px; padding-top:0;">
+        <button class="btn start" style="flex:1;" onclick="showCurrentSlide()">Show on display</button>
+        <button class="btn stop" style="flex:1;" onclick="clearMedia()">Hide</button>
+      </div>
+    </div>
+  </div>
+
   <div class="open-display-btn">
     <a href="display.html" target="_blank" id="display-link">
       Open display screen
@@ -913,9 +1004,26 @@ async function fetchClientIp() {
 function updateWallClock() {
   const el = document.getElementById('wall-clock');
   if (el) el.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  updateTimeRangeLabel();
 }
-updateWallClock();
-setInterval(updateWallClock, 1000);
+
+function fmtClock(d) {
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Turns "5 min" into an actual scheduled window like "7:45 – 7:50".
+// Before Start is pressed, this is a live projection ("if it starts
+// right now") that keeps ticking forward with the clock; once
+// started, it locks to the real start time so it stops drifting.
+function updateTimeRangeLabel() {
+  const el = document.getElementById('preview-range');
+  if (!el || !totalSecs) { if (el) el.textContent = ''; return; }
+  const start = segmentStartAt !== null ? new Date(segmentStartAt) : new Date();
+  const end = segmentStartAt !== null
+    ? new Date(segmentStartAt + totalSecs * 1000)
+    : new Date(Date.now() + totalSecs * 1000);
+  el.textContent = `${fmtClock(start)} – ${fmtClock(end)}`;
+}
 
 async function createAccount() {
   welcomeError.textContent = '';
@@ -1083,6 +1191,12 @@ let extraNote = '';
 let extraNoteAt = 0;
 let program = [];
 let activeProgramId = null;
+let slides = [];
+let slideIndex = 0;
+let segmentStartAt = null; // ms timestamp — locked in when Start is first pressed for this duration
+
+updateWallClock();
+setInterval(updateWallClock, 1000);
 
 function pad(n) { return String(n).padStart(2,'0'); }
 function fmt(s) {
@@ -1137,6 +1251,8 @@ async function broadcast() {
       extraNote,
       extraNoteAt,
       program,
+      slides,
+      slideIndex,
       updated: Date.now()
     }, { merge: true });
   } catch (err) {
@@ -1171,6 +1287,12 @@ function beginTicking() {
 function startTimer() {
   if (running || remaining <= 0) return;
   running = true;
+  // Lock in the real start time the first time this duration is
+  // started (not on every resume from pause), so the projected
+  // end-of-segment clock time stays fixed to when it actually began.
+  if (segmentStartAt === null) {
+    segmentStartAt = Date.now() - (totalSecs - remaining) * 1000;
+  }
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-pause').disabled = false;
   beginTicking();
@@ -1189,6 +1311,7 @@ function pauseTimer() {
 function resetTimer() {
   clearInterval(interval);
   running = false;
+  segmentStartAt = null;
   const h = parseInt(document.getElementById('inp-h').value) || 0;
   const m = parseInt(document.getElementById('inp-m').value) || 0;
   const s = parseInt(document.getElementById('inp-s').value) || 0;
@@ -1205,6 +1328,34 @@ function setPreset(h, m, s) {
   document.getElementById('inp-s').value = s;
   resetTimer();
 }
+
+// Lets the operator think in clock time ("ends at 8:29") instead of
+// mentally computing a duration. Start is optional and defaults to
+// right now; if the end time has already passed today, it's assumed
+// to mean tomorrow (handles slots that cross midnight).
+function applyTimeRange() {
+  const startVal = document.getElementById('time-start').value;
+  const endVal = document.getElementById('time-end').value;
+  if (!endVal) return;
+
+  const now = new Date();
+  let startDate = now;
+  if (startVal) {
+    const [sh, sm] = startVal.split(':').map(Number);
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm, 0, 0);
+  }
+
+  const [eh, em] = endVal.split(':').map(Number);
+  let endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), eh, em, 0, 0);
+  if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
+
+  const diffSecs = Math.round((endDate - startDate) / 1000);
+  document.getElementById('inp-h').value = Math.floor(diffSecs / 3600);
+  document.getElementById('inp-m').value = Math.floor((diffSecs % 3600) / 60);
+  document.getElementById('inp-s').value = diffSecs % 60;
+  resetTimer();
+}
+window.applyTimeRange = applyTimeRange;
 
 // On-the-fly time adjustment — nudge the running (or paused) countdown
 // without resetting it. Keeps totalSecs in step so the progress ring
@@ -1251,7 +1402,10 @@ function renderProgram() {
   list.innerHTML = program.map((item) => {
     const label = item.h > 0 ? `${pad(item.h)}:${pad(item.m)}:${pad(item.s)}` : `${pad(item.m)}:${pad(item.s)}`;
     return `<div class="program-row${item.id === activeProgramId ? ' active' : ''}">
-      <span class="p-name">${escapeHtml(item.name)}</span>
+      <div class="p-info">
+        <div class="p-name">${escapeHtml(item.name)}</div>
+        ${item.title ? `<div class="p-title">${escapeHtml(item.title)}</div>` : ''}
+      </div>
       <span class="p-dur">${label}</span>
       <button class="p-use" onclick="useProgramItem('${item.id}')">Use</button>
       <button class="p-del" onclick="removeProgramItem('${item.id}')" title="Remove" aria-label="Remove">
@@ -1277,6 +1431,10 @@ async function restoreEventState() {
 
   if (data && Array.isArray(data.program)) program = data.program;
   renderProgram();
+
+  if (data && Array.isArray(data.slides)) slides = data.slides;
+  if (data && typeof data.slideIndex === 'number') slideIndex = data.slideIndex;
+  renderSlides();
 
   const hasTimerState = data && typeof data.remaining === 'number' && typeof data.totalSecs === 'number';
   if (!hasTimerState) {
@@ -1333,13 +1491,16 @@ async function restoreEventState() {
 
 function addProgramItem() {
   const nameEl = document.getElementById('prog-name-input');
+  const titleEl = document.getElementById('prog-title-input');
   const name = nameEl.value.trim();
+  const title = titleEl.value.trim();
   const h = parseInt(document.getElementById('prog-h').value) || 0;
   const m = parseInt(document.getElementById('prog-m').value) || 0;
   const s = parseInt(document.getElementById('prog-s').value) || 0;
   if (!name || (h === 0 && m === 0 && s === 0)) return;
-  program.push({ id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, h, m, s });
+  program.push({ id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, title, h, m, s });
   nameEl.value = '';
+  titleEl.value = '';
   renderProgram();
   broadcast();
 }
@@ -1354,8 +1515,8 @@ function removeProgramItem(id) {
 window.removeProgramItem = removeProgramItem;
 
 // The core ask: one tap loads a speaker's allotted time AND announces
-// their name on the display, instead of setting duration + message
-// separately every time someone's turn comes up.
+// their name (and title, if given) on the display, instead of setting
+// duration + message separately every time someone's turn comes up.
 function useProgramItem(id) {
   const item = program.find(p => p.id === id);
   if (!item) return;
@@ -1363,12 +1524,96 @@ function useProgramItem(id) {
   document.getElementById('inp-h').value = item.h;
   document.getElementById('inp-m').value = item.m;
   document.getElementById('inp-s').value = item.s;
-  currentMsg = item.name;
-  document.getElementById('msg-input').value = item.name;
+  currentMsg = item.title ? `${item.name} — ${item.title}` : item.name;
+  document.getElementById('msg-input').value = currentMsg;
   renderProgram();
   resetTimer();
 }
 window.useProgramItem = useProgramItem;
+
+// --- Slides ---
+// A simple ordered image/video deck the operator can build ahead of
+// time and step through live. Reuses the same mediaUrl/mediaType
+// fields the single-media box already broadcasts, so display.html
+// needs no separate slide-rendering logic — advancing a slide just
+// points the existing media overlay at a different URL.
+function renderSlides() {
+  const list = document.getElementById('slide-list');
+  const posEl = document.getElementById('slide-position');
+  if (slides.length === 0) {
+    list.innerHTML = '<div class="slide-empty">No slides yet — add one above</div>';
+    posEl.textContent = 'No slides';
+    return;
+  }
+  if (slideIndex >= slides.length) slideIndex = slides.length - 1;
+  if (slideIndex < 0) slideIndex = 0;
+  posEl.textContent = `Slide ${slideIndex + 1} of ${slides.length}`;
+  list.innerHTML = slides.map((url, i) => `<div class="slide-row${i === slideIndex ? ' active' : ''}">
+      <span class="s-num">${i + 1}</span>
+      <span class="s-url">${escapeHtml(url)}</span>
+      <button class="s-go" onclick="goToSlide(${i})">Go to</button>
+      <button class="s-del" onclick="removeSlide(${i})" title="Remove" aria-label="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+function addSlide() {
+  const input = document.getElementById('slide-url-input');
+  const url = input.value.trim();
+  if (!url) return;
+  slides.push(url);
+  input.value = '';
+  renderSlides();
+  broadcast();
+}
+window.addSlide = addSlide;
+
+function removeSlide(i) {
+  slides.splice(i, 1);
+  if (slideIndex >= slides.length) slideIndex = Math.max(0, slides.length - 1);
+  renderSlides();
+  broadcast();
+}
+window.removeSlide = removeSlide;
+
+function goToSlide(i) {
+  if (i < 0 || i >= slides.length) return;
+  slideIndex = i;
+  renderSlides();
+  showCurrentSlide();
+}
+window.goToSlide = goToSlide;
+
+function prevSlide() {
+  if (slides.length === 0) return;
+  slideIndex = Math.max(0, slideIndex - 1);
+  renderSlides();
+  if (currentMediaUrl) showCurrentSlide(); // only push live if slides are already showing
+  else broadcast();
+}
+window.prevSlide = prevSlide;
+
+function nextSlide() {
+  if (slides.length === 0) return;
+  slideIndex = Math.min(slides.length - 1, slideIndex + 1);
+  renderSlides();
+  if (currentMediaUrl) showCurrentSlide();
+  else broadcast();
+}
+window.nextSlide = nextSlide;
+
+function showCurrentSlide() {
+  if (slides.length === 0) return;
+  currentMediaUrl = slides[slideIndex];
+  currentMediaType = 'image';
+  document.getElementById('media-url-input').value = currentMediaUrl;
+  document.getElementById('media-type').value = 'image';
+  document.getElementById('media-status').textContent = `Live on display: slide ${slideIndex + 1} of ${slides.length}`;
+  renderSlides();
+  updatePreview();
+}
+window.showCurrentSlide = showCurrentSlide;
 
 function sendMessage() {
   currentMsg = document.getElementById('msg-input').value.trim();
